@@ -103,6 +103,7 @@ walks:
 
 | Version | Highlights |
 |---|---|
+| **0.1.1** | The partner page says plainly when it is not yours, the console's rollouts name their release, and the portal's fields are named. |
 | **0.1.0** | Cells and their health, releases by digest, staged rollouts in maintenance windows, incidents and status, recovery requests, and partners' portfolios (FERRUM-CLOUD-001, -004, FERRUM-PARTNER-001, FERRUM-IND-021). |
 
 ## License

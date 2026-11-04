@@ -5,8 +5,8 @@
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { type FormEvent, useState } from "react";
-import { api, errorMessage } from "@ferrum/client";
-import { Badge, Button, ErrorState, Field, PageLoading, toast, useShellTitle } from "@ferrum/kit";
+import { api, ApiError, errorMessage } from "@ferrum/client";
+import { Badge, Button, EmptyState, ErrorState, Field, PageLoading, toast, useShellTitle } from "@ferrum/kit";
 import { ends, tone } from "./words";
 
 const BASE = "/api/app/control";
@@ -60,6 +60,8 @@ export function PartnerPage() {
       setBusy(null);
     }
   };
+  // Someone who is no partner's member is told so plainly, not shown a failure to try again.
+  if (q.error instanceof ApiError && q.error.status === 403) return <EmptyState title="This page is for a partner's members" />;
   if (q.error) return <ErrorState error={q.error} onRetry={() => void q.refetch()} />;
   if (!q.data) return <PageLoading />;
   const { partner, workspaces, statements, templates } = q.data;
