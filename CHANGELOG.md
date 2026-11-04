@@ -1,0 +1,19 @@
+# Changelog
+
+## 0.1.0
+
+Ferrum Cloud's control plane, apart from the workspaces it runs (FERRUM-CLOUD-001, -004,
+FERRUM-PARTNER-001, FERRUM-IND-021).
+
+- Cells reporting their version, digest, configuration, backups, certificate and resources, and
+  their health worked out from it.
+- Workspaces placed in their region's shared cell with the most room; their health read with the
+  customer's health-only support key.
+- Releases by digest, qualified by someone other than who recorded them.
+- Staged rollouts in maintenance windows, soaking before the next wave, halting on failure,
+  customers told when they start.
+- Incidents told in updates; the public status.
+- Recovery requests decided by someone other than who asked.
+- Partners and their tiers, setup templates by revision, onboarding, support cases due by plan,
+  and revenue statements.
+- Its own interface at `/control/`, and portal pages for partners and customers.

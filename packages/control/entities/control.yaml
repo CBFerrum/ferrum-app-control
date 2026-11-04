@@ -1,0 +1,249 @@
+- name: Release
+  label: Release
+  label_plural: Releases
+  kind: master
+  module: control
+  title_field: release_version
+  description: A build of Ferrum, known by its immutable digest. A Release Manager other than who recorded it qualifies it, and only a qualified release is rolled out.
+  fields:
+    - {name: release_version, type: data, required: true, unique: true, in_list: true, label: Version}
+    - {name: digest, type: data, required: true, in_list: true, description: "sha256: and 64 hexadecimal digits"}
+    - {name: provenance, type: data, description: "Where its build provenance is published"}
+    - {name: notes, type: text}
+    - {name: recorded_by, type: email, read_only: true, no_copy: true}
+    - {name: status, type: select, options: [Candidate, Qualified, Withdrawn], default: Candidate, read_only: true, no_copy: true, in_list: true, in_filter: true}
+    - {name: qualified_by, type: email, read_only: true, no_copy: true}
+    - {name: qualified_at, type: datetime, read_only: true, no_copy: true}
+  actions:
+    - {name: qualify, label: Qualify It, permission: write, condition: "doc.status == 'Candidate'"}
+    - {name: withdraw, label: Withdraw It, permission: write, condition: "doc.status != 'Withdrawn'"}
+  list: {columns: [release_version, status, qualified_by], sort: release_version desc}
+
+- name: Cell
+  label: Cell
+  label_plural: Cells
+  kind: master
+  module: control
+  title_field: cell_name
+  description: A deployment of Ferrum in one region that runs customers' workspaces. Its operators' tooling reports how it is; the control plane holds no records of the workspaces on it.
+  fields:
+    - {name: cell_name, type: data, required: true, unique: true, in_list: true}
+    - {name: region, type: data, required: true, in_list: true, in_filter: true}
+    - {name: cell_kind, type: select, options: [Shared, Dedicated], default: Shared, in_filter: true, label: Kind}
+    - {name: capacity, type: int, required: true, min: 1, description: "How many workspaces it may run"}
+    - {name: placed, type: int, read_only: true, no_copy: true, in_list: true, description: "How many it runs"}
+    - {name: maintenance_day, type: select, options: [Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday], default: Sunday}
+    - {name: maintenance_hour, type: int, default: 2, min: 0, max: 23, description: "When its maintenance window opens, in UTC"}
+    - {name: maintenance_hours, type: int, default: 2, min: 1, max: 12, description: "How long the window lasts"}
+    - {name: desired_release, type: link, to: Release, read_only: true, no_copy: true, description: "What it should run, set by rollouts"}
+    - {name: desired_config, type: data, description: "The fingerprint of the configuration it should report"}
+    - {name: report_token, type: secret, description: "What its tooling sends with its readings: a long random value"}
+    - {name: reported_version, type: data, read_only: true, no_copy: true}
+    - {name: reported_digest, type: data, read_only: true, no_copy: true}
+    - {name: reported_config, type: data, read_only: true, no_copy: true}
+    - {name: backup_at, type: datetime, read_only: true, no_copy: true, label: Last Backup}
+    - {name: certificate_expires_at, type: datetime, read_only: true, no_copy: true}
+    - {name: cpu_percent, type: int, read_only: true, no_copy: true}
+    - {name: memory_percent, type: int, read_only: true, no_copy: true}
+    - {name: disk_percent, type: int, read_only: true, no_copy: true}
+    - {name: reported_at, type: datetime, read_only: true, no_copy: true}
+    - {name: health, type: select, options: [Unknown, Healthy, Degraded, Down], default: Unknown, read_only: true, no_copy: true, in_list: true, in_filter: true}
+    - {name: problems, type: text, read_only: true, no_copy: true}
+  list: {columns: [cell_name, region, health, placed], sort: cell_name asc}
+
+- name: Partner
+  label: Partner
+  label_plural: Partners
+  kind: master
+  module: control
+  title_field: partner_name
+  description: A firm that brings customers and serves them. A certified tier lasts until its certification does.
+  fields:
+    - {name: partner_name, type: data, required: true, unique: true, in_list: true}
+    - {name: tier, type: select, options: [Registered, Certified, Premier], default: Registered, in_list: true, in_filter: true}
+    - {name: certified_until, type: date}
+    - {name: revenue_share, type: percent, default: 0, min: 0, max: 50, description: "Its share of what its customers pay"}
+    - {name: members, type: table, of: PartnerMember}
+  actions:
+    - {name: issue_statement, label: Issue a Statement, permission: write, params: [{name: month, type: date, label: Any Day of the Month}]}
+  list: {columns: [partner_name, tier, certified_until], sort: partner_name asc}
+
+- name: PartnerMember
+  label: Member
+  kind: child
+  fields:
+    - {name: email, type: email, required: true, in_list: true}
+
+- name: SetupTemplate
+  label: Setup Template
+  label_plural: Setup Templates
+  kind: master
+  module: control
+  title_field: template_name
+  description: A repeatable setup for a customer's workspace (the packages and apps it installs and the settings it starts with), versioned rather than forked.
+  fields:
+    - {name: template_name, type: data, required: true, unique: true, in_list: true}
+    - {name: packages, type: text, required: true, description: "One package per line"}
+    - {name: apps, type: text, description: "Store apps it installs, one per line"}
+    - {name: settings, type: json}
+    - {name: partner, type: link, to: Partner, in_filter: true, description: "The partner whose pack it is"}
+    - {name: revision, type: int, default: 1, read_only: true, no_copy: true, in_list: true}
+  list: {columns: [template_name, partner, revision], sort: template_name asc}
+
+- name: HostedWorkspace
+  label: Hosted Workspace
+  label_plural: Hosted Workspaces
+  kind: master
+  module: control
+  title_field: slug
+  description: A customer's workspace, where it runs and on what terms. Its records stay on its cell; the control plane reads only the health its customer's support key shows.
+  fields:
+    - {name: slug, type: data, required: true, unique: true, in_list: true}
+    - {name: customer_name, type: data, required: true, in_list: true}
+    - {name: address, type: data, required: true, description: "https://… where the workspace answers"}
+    - {name: region, type: data, required: true, in_filter: true}
+    - {name: cell, type: link, to: Cell, in_list: true, in_filter: true, description: "Left empty, the region's shared cell with the most room"}
+    - {name: status, type: select, options: [Onboarding, Active, Closed], default: Onboarding, in_list: true, in_filter: true}
+    - {name: plan, type: data}
+    - {name: monthly_amount, type: decimal, min: 0, description: "What it pays a month, in the operator's billing currency"}
+    - {name: term_end, type: date, in_filter: true, label: Renews On}
+    - {name: support_plan, type: select, options: [Standard, Premium], default: Standard}
+    - {name: partner, type: link, to: Partner, in_filter: true}
+    - {name: contact_email, type: email, description: "Who at the customer sees its status"}
+    - {name: template, type: link, to: SetupTemplate}
+    - {name: template_revision, type: int, read_only: true, no_copy: true}
+    - {name: health_key, type: secret, description: "A health-only support key the customer's administrator gave"}
+    - {name: health_key_expires, type: date, description: "When that support access ends"}
+    - {name: health, type: select, options: [Unknown, Healthy, Degraded, Unreachable], default: Unknown, read_only: true, no_copy: true, in_list: true, in_filter: true}
+    - {name: health_problems, type: text, read_only: true, no_copy: true}
+    - {name: running_version, type: data, read_only: true, no_copy: true}
+    - {name: checked_at, type: datetime, read_only: true, no_copy: true}
+  list: {columns: [slug, customer_name, cell, health, status], sort: slug asc}
+
+- name: RolloutWave
+  label: Wave
+  kind: child
+  fields:
+    - {name: cell, type: link, to: Cell, required: true, in_list: true}
+    - {name: state, type: select, options: [Pending, Upgrading, Soaking, Done, Failed], default: Pending, read_only: true, in_list: true}
+    - {name: started_at, type: datetime, read_only: true}
+    - {name: soaking_since, type: datetime, read_only: true}
+    - {name: done_at, type: datetime, read_only: true}
+    - {name: note, type: data, read_only: true, in_list: true}
+
+- name: Rollout
+  label: Rollout
+  label_plural: Rollouts
+  kind: master
+  module: control
+  title_field: release
+  description: A qualified release taken to cells one wave at a time, each in its maintenance window and healthy for the soak before the next; a wave that fails halts it.
+  fields:
+    - {name: release, type: link, to: Release, required: true, in_list: true}
+    - {name: soak_hours, type: int, default: 24, min: 1, max: 336, description: "How long a wave stays healthy before the next"}
+    - {name: waves, type: table, of: RolloutWave, required: true}
+    - {name: status, type: select, options: [Draft, Running, Halted, Done], default: Draft, read_only: true, no_copy: true, in_list: true, in_filter: true}
+    - {name: halted_reason, type: text, read_only: true, no_copy: true}
+    - {name: started_by, type: email, read_only: true, no_copy: true}
+  actions:
+    - {name: start, label: Start It, permission: write, condition: "doc.status == 'Draft'"}
+    - {name: halt, label: Halt It, permission: write, condition: "doc.status == 'Running'", params: [{name: reason, type: text, label: Why}]}
+    - {name: resume, label: Resume It, permission: write, condition: "doc.status == 'Halted'"}
+  list: {columns: [release, status], sort: updated_at desc}
+
+- name: IncidentCell
+  label: Cell
+  kind: child
+  fields:
+    - {name: cell, type: link, to: Cell, required: true, in_list: true}
+
+- name: IncidentUpdate
+  label: Update
+  kind: child
+  fields:
+    - {name: posted_at, type: datetime, read_only: true, in_list: true}
+    - {name: status, type: select, options: [Investigating, Identified, Monitoring, Resolved], required: true, in_list: true}
+    - {name: message, type: text, required: true, in_list: true}
+
+- name: ServiceIncident
+  label: Incident
+  label_plural: Incidents
+  kind: master
+  module: control
+  title_field: title
+  description: Something wrong with one or more cells, told to their customers as it goes. Each change of status is said in an update.
+  fields:
+    - {name: title, type: data, required: true, in_list: true}
+    - {name: severity, type: select, options: [Minor, Major, Critical], default: Minor, in_list: true, in_filter: true}
+    - {name: status, type: select, options: [Investigating, Identified, Monitoring, Resolved], default: Investigating, in_list: true, in_filter: true}
+    - {name: cells, type: table, of: IncidentCell, required: true}
+    - {name: updates, type: table, of: IncidentUpdate, required: true}
+    - {name: public, type: check, default: 1, description: "Shown on the status page"}
+    - {name: started_at, type: datetime, read_only: true, no_copy: true}
+    - {name: resolved_at, type: datetime, read_only: true, no_copy: true}
+  list: {columns: [title, severity, status, started_at], sort: started_at desc}
+
+- name: RecoveryRequest
+  label: Recovery Request
+  label_plural: Recovery Requests
+  kind: master
+  module: control
+  title_field: workspace
+  description: A restore, export or move of a workspace, decided by an operator other than who asked for it. Its customer sees where it stands.
+  fields:
+    - {name: workspace, type: link, to: HostedWorkspace, required: true, in_list: true, in_filter: true}
+    - {name: recovery_kind, type: select, options: [Restore, Export, Move], required: true, in_list: true, label: Kind}
+    - {name: restore_to, type: datetime, description: "The moment a restore goes back to"}
+    - {name: reason, type: text, required: true}
+    - {name: requested_by, type: email, read_only: true, no_copy: true}
+    - {name: status, type: select, options: [Requested, Approved, Refused, Done], default: Requested, read_only: true, no_copy: true, in_list: true, in_filter: true}
+    - {name: decided_by, type: email, read_only: true, no_copy: true}
+    - {name: decision_note, type: text, read_only: true, no_copy: true}
+  actions:
+    - {name: approve, label: Approve It, permission: write, condition: "doc.status == 'Requested'"}
+    - {name: refuse, label: Refuse It, permission: write, condition: "doc.status == 'Requested'", params: [{name: note, type: text, label: Why}]}
+    - {name: complete, label: Mark It Done, permission: write, condition: "doc.status == 'Approved'"}
+  list: {columns: [workspace, recovery_kind, status], sort: updated_at desc}
+
+- name: SupportCase
+  label: Support Case
+  label_plural: Support Cases
+  kind: master
+  module: control
+  title_field: subject
+  description: A customer's or a partner's request for help with a workspace, due by its support plan and severity.
+  fields:
+    - {name: workspace, type: link, to: HostedWorkspace, required: true, in_list: true, in_filter: true}
+    - {name: subject, type: data, required: true, in_list: true}
+    - {name: details, type: text}
+    - {name: severity, type: select, options: [Low, High, Critical], default: Low, in_list: true, in_filter: true}
+    - {name: status, type: select, options: [Open, Waiting, Resolved], default: Open, in_list: true, in_filter: true}
+    - {name: raised_by, type: email, read_only: true, no_copy: true}
+    - {name: partner, type: link, to: Partner, read_only: true, no_copy: true, in_filter: true}
+    - {name: due_at, type: datetime, read_only: true, no_copy: true, in_list: true}
+    - {name: resolution, type: text}
+    - {name: resolved_at, type: datetime, read_only: true, no_copy: true}
+  list: {columns: [subject, workspace, severity, status, due_at], sort: due_at asc}
+
+- name: StatementLine
+  label: Line
+  kind: child
+  fields:
+    - {name: workspace, type: link, to: HostedWorkspace, read_only: true, in_list: true}
+    - {name: amount, type: decimal, read_only: true, in_list: true}
+    - {name: share, type: decimal, read_only: true, in_list: true}
+
+- name: RevenueStatement
+  label: Revenue Statement
+  label_plural: Revenue Statements
+  kind: master
+  module: control
+  title_field: partner
+  description: A partner's share of what its customers paid in a month, issued once and kept.
+  fields:
+    - {name: partner, type: link, to: Partner, required: true, read_only: true, in_list: true, in_filter: true}
+    - {name: month, type: date, required: true, read_only: true, in_list: true, description: "Its first day"}
+    - {name: lines, type: table, of: StatementLine}
+    - {name: total, type: decimal, read_only: true, in_list: true}
+    - {name: partner_share, type: decimal, read_only: true, in_list: true}
+  list: {columns: [partner, month, total, partner_share], sort: month desc}
