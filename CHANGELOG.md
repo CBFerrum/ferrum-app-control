@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.1
+
+From a browser walk of the control plane and its portal pages.
+
+- Someone who is no partner's member is told plainly that the partner page is theirs, not shown a failure to try again.
+- The console's rollouts name their release by its version, not its id.
+- Rebuilt with Ferrum-Frontend's fields that name their controls, so the portal's forms are named for assistive technology.
+
 ## 0.1.0
 
 Ferrum Cloud's control plane, apart from the workspaces it runs (FERRUM-CLOUD-001, -004,

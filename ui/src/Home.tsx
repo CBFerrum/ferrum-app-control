@@ -45,7 +45,7 @@ function Waves({ id, names }: { id: string; names: Map<string, string> }) {
 export function Home() {
   useShellTitle("Control Plane");
   const cells = useQuery({ queryKey: ["control", "cells"], queryFn: () => list("Cell", [], { sort: "cell_name asc" }), refetchInterval: 60_000 });
-  const rollouts = useQuery({ queryKey: ["control", "rollouts"], queryFn: () => list("Rollout", [["status", "in", ["Running", "Halted"]]]) });
+  const rollouts = useQuery({ queryKey: ["control", "rollouts"], queryFn: () => list("Rollout", [["status", "in", ["Running", "Halted"]]], { titles: "true" }) });
   const incidents = useQuery({ queryKey: ["control", "incidents"], queryFn: () => list("ServiceIncident", [["status", "!=", "Resolved"]]) });
   const ill = useQuery({ queryKey: ["control", "ill"], queryFn: () => list("HostedWorkspace", [["health", "in", ["Degraded", "Unreachable"]]]) });
   const failed = [cells, rollouts, incidents, ill].find((q) => q.isError);
