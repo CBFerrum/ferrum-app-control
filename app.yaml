@@ -1,0 +1,35 @@
+id: control
+name: Control Plane
+version: 0.1.0
+publisher: cbferrum
+summary: "Ferrum Cloud's control plane: cells and their health, releases by digest, staged rollouts, incidents and status, recovery requests, and partners' portfolios"
+description: README.md
+categories: [developer]
+license: AGPL-3.0-only
+homepage: https://github.com/CBFerrum/ferrum-app-control
+support: https://github.com/CBFerrum/ferrum-app-control/issues
+runtime: native
+platform: ">=0.3.2, <0.4"
+packages: [control]
+uninstall: ask
+# Its own interface at /control/: the cells, rollouts, incidents and workspaces; and two pages of
+# the portal, a partner's portfolio and a customer's service status.
+ui:
+  dist: ui/dist
+contributes:
+  shell.app:
+    - id: control
+      route: control
+      title: Control Plane
+      description: Cells, releases, rollouts and incidents
+      icon: server
+      color: "#334155"
+      roles: [Fleet Operator, Release Manager]
+  shell.open:
+    - {id: control, package: control, path: "control/e/{entity}/{id}", list: "control/e/{entity}"}
+  shell.create:
+    - {id: cell, label: Cell, path: control/e/Cell/new, entity: Cell}
+    - {id: incident, label: Incident, path: control/e/ServiceIncident/new, entity: ServiceIncident}
+  shell.portal:
+    - {id: partner, title: Your customers, description: "Your customers' workspaces, their health and renewals, cases and statements"}
+    - {id: service, title: Your service, description: "How your workspace is doing, coming maintenance and incidents"}

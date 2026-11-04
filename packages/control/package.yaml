@@ -1,0 +1,33 @@
+package: control
+version: 0.1.0
+label: Control Plane
+description: "Ferrum Cloud's control plane, apart from the workspaces it runs: cells and their health, releases by digest, staged rollouts in maintenance windows, incidents and status, recovery requests, and the partners' portfolios"
+depends: [core]
+
+modules:
+  - name: control
+    label: Control Plane
+    icon: server
+    order: 64
+    items: [Cell, HostedWorkspace, Release, Rollout, ServiceIncident, RecoveryRequest, Partner, SetupTemplate, SupportCase, RevenueStatement]
+
+roles:
+  - name: Fleet Operator
+    description: Runs the cells and the workspaces on them, rolls releases out, tells customers of incidents and decides recovery requests.
+    permissions:
+      - {entity: Cell, read: true, write: true, create: true}
+      - {entity: HostedWorkspace, read: true, write: true, create: true}
+      - {entity: Release, read: true}
+      - {entity: Rollout, read: true, write: true, create: true}
+      - {entity: ServiceIncident, read: true, write: true, create: true}
+      - {entity: RecoveryRequest, read: true, write: true, create: true}
+      - {entity: Partner, read: true, write: true, create: true}
+      - {entity: SetupTemplate, read: true, write: true, create: true}
+      - {entity: SupportCase, read: true, write: true, create: true}
+      - {entity: RevenueStatement, read: true, export: true}
+  - name: Release Manager
+    description: Records releases by their digest and qualifies those someone else recorded.
+    permissions:
+      - {entity: Release, read: true, write: true, create: true}
+      - {entity: Rollout, read: true}
+      - {entity: Cell, read: true}
