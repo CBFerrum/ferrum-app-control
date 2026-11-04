@@ -58,6 +58,7 @@ export function Home() {
         <h2>Cells</h2>
         <Link to="/e/Cell/new">New cell</Link>
       </header>
+      {cells.data.length === 0 && <p className="faint">No cell yet: add the deployments that run customers' workspaces.</p>}
       {groupBy(cells.data, "region").map(([region, rows]) => (
         <section key={region} className="card card-pad stack" aria-label={region}>
           <h3>{region}</h3>
