@@ -84,7 +84,7 @@ impl DocHook for PartnerHook {
             .find_tx(&system, hc.tx, "RevenueStatement", &[Filter::eq("partner", partner.to_string()), Filter::eq("month", month.to_string())], None, 1)
             .await?;
         if !issued.is_empty() {
-            return Err(Error::invalid(format!("{}'s statement for {} has been issued", s(doc, "partner_name").unwrap_or_default(), month.format("%B %Y"))));
+            return Err(Error::invalid(format!("{} already has its statement for {}", s(doc, "partner_name").unwrap_or_default(), month.format("%B %Y"))));
         }
         let share = d(doc, "revenue_share");
         let (mut lines, mut total, mut owed) = (Vec::new(), Decimal::ZERO, Decimal::ZERO);

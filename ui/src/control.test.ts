@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { groupBy } from "./Home";
 import { type Customer, needsAttention } from "./Partner";
-import { daysUntil, ends, tone } from "./words";
+import { access, daysUntil, ends, tone } from "./words";
 
 describe("the control plane's words", () => {
   it("tones and ends", () => {
@@ -13,6 +13,11 @@ describe("the control plane's words", () => {
       "in 1 day",
       "2027-01-01",
       "not given",
+    ]);
+    expect([access(null, "2026-11-04"), access("2026-11-01", "2026-11-04"), access("2026-11-07", "2026-11-04")]).toEqual([
+      "Support access is not given",
+      "Support access has ended",
+      "Support access ends in 3 days",
     ]);
   });
 

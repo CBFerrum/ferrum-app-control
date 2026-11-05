@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.1.3
+
+From the browser walk of a recovery request and a partner's statement.
+
+- A workspace without support access says "Support access is not given" (and "has ended" once it
+  has), not "Support access ends not given", on the customer's and the partner's pages.
+- A second statement for a month is refused as "Northwind Partners already has its statement for
+  October 2026", not with a possessive that read "Partners's".
+- Rebuilt with Ferrum-Frontend 16b5c57.
+
 ## 0.1.2
 
 Rebuilt with Ferrum-Frontend 80ff179: a field's label names its control for assistive technology, and a record whose title is a link shows that record's title, not its id.
