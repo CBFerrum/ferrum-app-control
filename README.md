@@ -103,6 +103,7 @@ walks:
 
 | Version | Highlights |
 |---|---|
+| **0.1.5** | Personal-data requests find customer contacts, their support cases and restore requests. |
 | **0.1.4** | Rebuilt with Ferrum-Frontend daeadda: actions say what they did. |
 | **0.1.3** | Support access is said plainly when it is not given or has ended, and a second statement for a month is refused in plain words. |
 | **0.1.2** | Rebuilt with Ferrum-Frontend 80ff179: labels name their fields, and linked titles show their titles. |
