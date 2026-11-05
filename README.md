@@ -103,6 +103,7 @@ walks:
 
 | Version | Highlights |
 |---|---|
+| **0.1.6** | Rebuilt with Ferrum-Frontend 00dea07: a workflow state's kept fields are read-only, its needed ones required. |
 | **0.1.5** | Personal-data requests find customer contacts, their support cases and restore requests. |
 | **0.1.4** | Rebuilt with Ferrum-Frontend daeadda: actions say what they did. |
 | **0.1.3** | Support access is said plainly when it is not given or has ended, and a second statement for a month is refused in plain words. |
