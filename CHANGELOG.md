@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.6
+
+Rebuilt with Ferrum-Frontend 00dea07: in a workflow state that names what may change, the other fields show read-only, and the fields the state needs show required.
+
 ## 0.1.5
 
 Personal-data requests find a hosted customer's contact, the support cases they raised and the restores they asked for. Erasure takes their address off the workspace and the cases; a restore request is kept as evidence, and the answer says why (Ferrum's FERRUM-PRIVACY-002).
