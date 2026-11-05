@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.5
+
+Personal-data requests find a hosted customer's contact, the support cases they raised and the restores they asked for. Erasure takes their address off the workspace and the cases; a restore request is kept as evidence, and the answer says why (Ferrum's FERRUM-PRIVACY-002).
+
 ## 0.1.4
 
 Rebuilt with Ferrum-Frontend daeadda: after an action runs, a record page shows what the action said it did rather than only that it is done.
