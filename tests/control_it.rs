@@ -643,7 +643,7 @@ async fn scenario() {
     assert_eq!(dec(&issued["partner_share"]), 100.0, "20% of 400 and 100; zeta is still onboarding");
     let statement = t.get("RevenueStatement", uid(&issued["statement"])).await;
     assert_eq!((dec(&statement["total"]), statement["lines"].as_array().unwrap().len()), (500.0, 2));
-    refused(t.act(&op1, "Partner", northwind, "issue_statement", Value::Null).await, "invalid", "has been issued");
+    refused(t.act(&op1, "Partner", northwind, "issue_statement", Value::Null).await, "invalid", "already has its statement for");
     refused(t.act(&rm1, "Partner", northwind, "issue_statement", Value::Null).await, "forbidden", "");
     refused(t.act(&clerk, "Partner", northwind, "issue_statement", Value::Null).await, "forbidden", "a Fleet Operator issues statements");
 

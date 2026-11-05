@@ -7,7 +7,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { type FormEvent, useState } from "react";
 import { api, ApiError, errorMessage } from "@ferrum/client";
 import { Badge, Button, EmptyState, ErrorState, Field, PageLoading, toast, useShellTitle } from "@ferrum/kit";
-import { ends, tone } from "./words";
+import { access, ends, tone } from "./words";
 
 const BASE = "/api/app/control";
 
@@ -100,7 +100,7 @@ export function PartnerPage() {
                 {c.health === "Unreachable" || c.health === "Degraded"
                   ? `${c.health}: ${c.problems ?? ""}`
                   : c.support_access_ending
-                    ? `support access ends ${ends(c.support_access_ends, today)}: ask them for a new health key`
+                    ? `${access(c.support_access_ends, today).toLowerCase()}: ask them for a new health key`
                     : `renews ${ends(c.renews_on, today)}`}
               </li>
             ))}

@@ -7,7 +7,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { type FormEvent, useState } from "react";
 import { api, errorMessage } from "@ferrum/client";
 import { Badge, Button, EmptyState, ErrorState, Field, PageLoading, toast, useShellTitle } from "@ferrum/kit";
-import { ends, moment, tone } from "./words";
+import { access, moment, tone } from "./words";
 
 const BASE = "/api/app/control";
 
@@ -60,7 +60,7 @@ function Card({ w, today }: { w: Workspace; today: string }) {
       {w.problems && <p>{w.problems}</p>}
       <p className="faint">
         {w.version ? `Ferrum ${w.version}` : "Its version is not known yet"}
-        {w.checked_at ? `, checked ${moment(w.checked_at)}` : ""}. Support access ends {ends(w.support_access_ends, today)}.
+        {w.checked_at ? `, checked ${moment(w.checked_at)}` : ""}. {access(w.support_access_ends, today)}.
       </p>
       {w.cell && (
         <p>

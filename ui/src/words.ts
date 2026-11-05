@@ -45,6 +45,14 @@ export function ends(day: string | null | undefined, today: string): string {
   return day!.slice(0, 10);
 }
 
+/** Where a workspace's support access stands: "Support access is not given", "… has ended", "… ends in 3 days". */
+export function access(day: string | null | undefined, today: string): string {
+  const when = ends(day, today);
+  if (when === "not given") return "Support access is not given";
+  if (when === "ended") return "Support access has ended";
+  return `Support access ends ${when}`;
+}
+
 /** A moment as people read it, in UTC. */
 export function moment(at?: string | null): string {
   if (!at) return "";
