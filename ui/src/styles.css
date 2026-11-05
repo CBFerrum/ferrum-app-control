@@ -10,6 +10,21 @@
   padding: 16px;
 }
 
+.st-page {
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+.st-headline {
+  font-size: 1.125rem;
+}
+
+.st-h {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-top: 8px;
+}
+
 .np-columns {
   display: grid;
   gap: 16px;
