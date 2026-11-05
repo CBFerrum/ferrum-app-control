@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.7
+
+The public status page: anyone opens `/control/status/{workspace}` without signing in (`shell.public`) and reads each region's cells and their state, the incidents told publicly with their updates, newest first, coming maintenance in each cell's window, and what was resolved in the last three days, read again every minute. Its headline is the worst state of any cell, or says how many incidents are open. It draws what `/api/site/{workspace}/control/status` answers, which names no customer, and points programs there. Built with Ferrum-Frontend 01b8ff0 (FERRUM-CLOUD-004).
+
 ## 0.1.6
 
 Rebuilt with Ferrum-Frontend 00dea07: in a workflow state that names what may change, the other fields show read-only, and the fields the state needs show required.

@@ -43,7 +43,9 @@ down, the cells and their workspaces carry on.
   told when to expect it.
 - **Incidents and status.** Each change of an incident's status is said in an update, and updates
   stay as posted. The public status shows each cell's state by region, open incidents and those
-  resolved in the last three days, and coming maintenance. It names no customer.
+  resolved in the last three days, and coming maintenance. It names no customer. Anyone reads it at
+  `/control/status/{workspace}` without signing in, read again every minute, or as JSON at
+  `/api/site/{workspace}/control/status`.
 - **Recovery.** A restore, export or move is decided by an operator other than who asked. Its
   customer sees where it stands.
 - **Partners.** A certified or premier tier needs a certification that has not lapsed, and lapses
@@ -95,7 +97,6 @@ walks:
   not the restore.
 - Prices, invoices and payment, and amounts in more than one currency: monthly amounts are
   metadata for statements.
-- A status page for the public beyond its JSON.
 - Edge gateways' own health in a partner's portfolio, and partner certification by exams or
   trained staff.
 
@@ -103,6 +104,7 @@ walks:
 
 | Version | Highlights |
 |---|---|
+| **0.1.7** | The public status page at `/control/status/{workspace}`: each region's cells, open incidents with their updates, coming maintenance and what was resolved in the last three days, for anyone, signed in or not. |
 | **0.1.6** | Rebuilt with Ferrum-Frontend 00dea07: a workflow state's kept fields are read-only, its needed ones required. |
 | **0.1.5** | Personal-data requests find customer contacts, their support cases and restore requests. |
 | **0.1.4** | Rebuilt with Ferrum-Frontend daeadda: actions say what they did. |
