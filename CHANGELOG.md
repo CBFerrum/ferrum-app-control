@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.4
+
+Rebuilt with Ferrum-Frontend daeadda: after an action runs, a record page shows what the action said it did rather than only that it is done.
+
 ## 0.1.3
 
 From the browser walk of a recovery request and a partner's statement.

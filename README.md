@@ -103,6 +103,7 @@ walks:
 
 | Version | Highlights |
 |---|---|
+| **0.1.4** | Rebuilt with Ferrum-Frontend daeadda: actions say what they did. |
 | **0.1.3** | Support access is said plainly when it is not given or has ended, and a second statement for a month is refused in plain words. |
 | **0.1.2** | Rebuilt with Ferrum-Frontend 80ff179: labels name their fields, and linked titles show their titles. |
 | **0.1.1** | The partner page says plainly when it is not yours, the console's rollouts name their release, and the portal's fields are named. |
