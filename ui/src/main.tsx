@@ -1,13 +1,14 @@
 // The control plane's own interface at /control/: cells, rollouts, incidents and workspaces, with
 // every record in the records frame's lists and forms. The same release draws two pages of the
 // workspace's portal (Ferrum docs/plan/apps-ui.md §9.1): a partner's customers at /portal/partner/,
-// and a customer's service at /portal/service/.
+// and a customer's service at /portal/service/; and the public status page anyone opens at
+// /control/status/{workspace} (`shell.public`), without signing in.
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { StrictMode, useEffect } from "react";
 import { createRoot } from "react-dom/client";
 import { createBrowserRouter, Link, Outlet, RouterProvider, useRouteError } from "react-router";
-import { bootstrap, routeBase, shell } from "@ferrum/client";
+import { bootstrap, isPublicPage, routeBase, shell } from "@ferrum/client";
 import { ConfirmHost, EmptyState, ErrorState, Toaster } from "@ferrum/kit";
 import { RequireAuth, setFrameMode } from "@ferrum/records/frame";
 import "./styles.css";
@@ -37,7 +38,8 @@ function Started() {
 const entry = bootstrap()?.app?.entry;
 const portal = entry === "portal/partner" || entry === "portal/service" ? entry : null;
 
-if (!portal) setFrameMode("app", ["control"]);
+// The public status page has no sign-in and no frame: a 401 there never asks anyone to sign in.
+if (!portal && !isPublicPage()) setFrameMode("app", ["control"]);
 
 const portalRoutes = [
   {
@@ -64,18 +66,27 @@ const staffRoutes = [
     element: (
       <>
         <Started />
-        <RequireAuth />
+        <Outlet />
       </>
     ),
     errorElement: <RouteError />,
     children: [
-      { index: true, lazy: () => import("./Home").then((m) => ({ Component: m.Home })) },
-      { path: "e/:entity", lazy: page("ListView") },
-      { path: "e/:entity/:id", lazy: page("FormView") },
-      { path: "r/:name", lazy: page("ReportView") },
-      { path: "apps/:app/settings", lazy: page("AppSettingsPage") },
-      { path: "x/:app/:page", lazy: page("ScreenPage") },
-      { path: "*", element: <NotFound /> },
+      // For anyone with the address.
+      { path: "status/:tenant", lazy: () => import("./Status").then((m) => ({ Component: m.StatusPage })) },
+      { path: "status/*", element: <EmptyState title="Page not found" icon="server" /> },
+      {
+        // For the operators: signed in, in the frame.
+        element: <RequireAuth />,
+        children: [
+          { index: true, lazy: () => import("./Home").then((m) => ({ Component: m.Home })) },
+          { path: "e/:entity", lazy: page("ListView") },
+          { path: "e/:entity/:id", lazy: page("FormView") },
+          { path: "r/:name", lazy: page("ReportView") },
+          { path: "apps/:app/settings", lazy: page("AppSettingsPage") },
+          { path: "x/:app/:page", lazy: page("ScreenPage") },
+          { path: "*", element: <NotFound /> },
+        ],
+      },
     ],
   },
 ];
