@@ -25,8 +25,10 @@ down, the cells and their workspaces carry on.
 - **Apart from what it runs.** A cell's tooling posts its readings: version, digest,
   configuration fingerprint, last backup, certificate expiry, and processor, memory and disk use.
   A workspace's health is read from its own address with the health-only support key its
-  customer's administrator gave (`/api/support/report`): queues and failures, no records. The
-  customer sees each of those requests, and ends the access when they choose.
+  customer's administrator gave (`/api/support/report`): queues and failures, no records, and what
+  each installed app says of its own part, IoT Edge of its gateways among them. Those count in the
+  workspace's health and show in partners' and customers' views. The customer sees each of those
+  requests, and ends the access when they choose.
 - **Cells' health.** A cell is down when it has not reported for 15 minutes or its certificate has
   expired. It is degraded when it runs another release than it should, its configuration has
   drifted, its last backup is more than 26 hours old, its certificate ends within 14 days, or a
@@ -137,13 +139,14 @@ records, in a workspace whose day is never UTC's:
   after it, and usage is charged at the month's peak, not prorated. Invoices are paid as ERP takes
   payments, and payment gateways wait for their keys. Without ERP, monthly amounts are only what
   statements count.
-- Edge gateways' own health in a partner's portfolio, and partner certification by exams or
-  trained staff.
+- Partner certification by exams or trained staff. Apps' own health shows only once the workspace's
+  server reports it (Ferrum with the support report's `apps`).
 
 ## Changelog
 
 | Version | Highlights |
 |---|---|
+| **0.5.0** | A workspace's health counts what its installed apps say of their own parts, IoT Edge's gateways among them. |
 | **0.4.1** | Rebuilt with Ferrum-Frontend a76295e: times on a person's own clock when they chose one. Today is the workspace's day, not UTC's. |
 | **0.4.0** | Each workspace's daily usage from its health report; with ERP, people and storage beyond its terms charged at the month's peak. |
 | **0.3.1** | Rebuilt with Ferrum-Frontend 24c3951: times on the workspace's clock; drafts headed as drafts. |
