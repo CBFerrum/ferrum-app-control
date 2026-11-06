@@ -114,6 +114,7 @@ walks:
 
 | Version | Highlights |
 |---|---|
+| **0.2.1** | Rebuilt with Ferrum-Frontend bb60115: empty numbers read as the server reads them; settings open as their record. |
 | **0.2.0** | Workspaces made on their cell from their setup with the cell's bootstrap token, at once when a partner onboards a customer with its first administrator. |
 | **0.1.7** | The public status page at `/control/status/{workspace}`: each region's cells, open incidents with their updates, coming maintenance and what was resolved in the last three days, for anyone, signed in or not. |
 | **0.1.6** | Rebuilt with Ferrum-Frontend 00dea07: a workflow state's kept fields are read-only, its needed ones required. |
