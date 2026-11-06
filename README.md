@@ -138,6 +138,7 @@ records, in a workspace whose day is never UTC's:
 
 | Version | Highlights |
 |---|---|
+| **0.3.1** | Rebuilt with Ferrum-Frontend 24c3951: times on the workspace's clock; drafts headed as drafts. |
 | **0.3.0** | With ERP, hosted workspaces invoiced once a month for their days (connector `control-erp`), and partners' statements count what was invoiced; days are the control plane's own. |
 | **0.2.1** | Rebuilt with Ferrum-Frontend bb60115: empty numbers read as the server reads them; settings open as their record. |
 | **0.2.0** | Workspaces made on their cell from their setup with the cell's bootstrap token, at once when a partner onboards a customer with its first administrator. |
