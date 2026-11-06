@@ -146,6 +146,7 @@ records, in a workspace whose day is never UTC's:
 
 | Version | Highlights |
 |---|---|
+| **0.5.3** | Rebuilt with Ferrum-Frontend 63280d3: right to left, pages mirror; the records pages' words in Arabic and Hindi. |
 | **0.5.2** | Rebuilt with Ferrum-Frontend a64416a: a box whose default is 1 shows ticked. |
 | **0.5.1** | A new incident's Public box shows ticked, as it is saved. |
 | **0.5.0** | A workspace's health counts what its installed apps say of their own parts, IoT Edge's gateways among them. |
