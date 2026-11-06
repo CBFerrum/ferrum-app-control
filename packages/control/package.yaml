@@ -34,5 +34,6 @@ roles:
 
 personal_data:
   - {entity: HostedWorkspace, match: contact_email, erase: [contact_email]}
+  - {entity: HostedWorkspace, match: admin_email, erase: [admin_email]}
   - {entity: SupportCase, match: raised_by, erase: [raised_by]}
   - {entity: RecoveryRequest, match: requested_by, retain: "Who asked for a workspace to be restored, kept as evidence of the request"}

@@ -38,6 +38,8 @@
     - {name: desired_release, type: link, to: Release, read_only: true, no_copy: true, description: "What it should run, set by rollouts"}
     - {name: desired_config, type: data, description: "The fingerprint of the configuration it should report"}
     - {name: report_token, type: secret, description: "What its tooling sends with its readings: a long random value"}
+    - {name: api_address, type: data, label: API Address, description: "https://… where the cell answers its operators: workspaces are made there"}
+    - {name: provision_token, type: secret, label: Bootstrap Token, description: "The cell's bootstrap token, which makes workspaces there: kept sealed, never shown again"}
     - {name: reported_version, type: data, read_only: true, no_copy: true}
     - {name: reported_digest, type: data, read_only: true, no_copy: true}
     - {name: reported_config, type: data, read_only: true, no_copy: true}
@@ -96,7 +98,7 @@
   kind: master
   module: control
   title_field: slug
-  description: A customer's workspace, where it runs and on what terms. Its records stay on its cell; the control plane reads only the health its customer's support key shows.
+  description: A customer's workspace, where it runs and on what terms. Made on its cell from its setup with the cell's bootstrap token; its records stay there, and the control plane reads only the health its customer's support key shows.
   fields:
     - {name: slug, type: data, required: true, unique: true, in_list: true}
     - {name: customer_name, type: data, required: true, in_list: true}
@@ -110,14 +112,18 @@
     - {name: support_plan, type: select, options: [Standard, Premium], default: Standard}
     - {name: partner, type: link, to: Partner, in_filter: true}
     - {name: contact_email, type: email, description: "Who at the customer sees its status"}
+    - {name: admin_email, type: email, label: First Administrator, description: "Made with the workspace on its cell; they choose their own password"}
     - {name: template, type: link, to: SetupTemplate}
     - {name: template_revision, type: int, read_only: true, no_copy: true}
+    - {name: provisioned_at, type: datetime, label: Made On Its Cell, read_only: true, no_copy: true, in_filter: true}
     - {name: health_key, type: secret, description: "A health-only support key the customer's administrator gave"}
     - {name: health_key_expires, type: date, description: "When that support access ends"}
     - {name: health, type: select, options: [Unknown, Healthy, Degraded, Unreachable], default: Unknown, read_only: true, no_copy: true, in_list: true, in_filter: true}
     - {name: health_problems, type: text, read_only: true, no_copy: true}
     - {name: running_version, type: data, read_only: true, no_copy: true}
     - {name: checked_at, type: datetime, read_only: true, no_copy: true}
+  actions:
+    - {name: provision, label: Make It on Its Cell, permission: write, condition: "doc.status == 'Onboarding'"}
   list: {columns: [slug, customer_name, cell, health, status], sort: slug asc}
 
 - name: RolloutWave

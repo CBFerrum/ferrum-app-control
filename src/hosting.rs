@@ -1,16 +1,20 @@
 //! Hosted workspaces, incidents and recovery requests. A workspace left without a cell is placed in
-//! its region's shared cell with the most room, and none is placed in a full or a down one. Its
-//! health is read from its own address with the health-only support key its customer's
-//! administrator gave (`/api/support/report`), and from nothing else: the control plane holds no
-//! record of it. An incident's every change of status is said in an update, and updates stay as
-//! they were posted. A recovery request is decided by an operator other than who asked for it.
+//! its region's shared cell with the most room, and none is placed in a full or a down one. It is
+//! made on its cell once, from its setup: the cell's `POST /api/tenants` with the cell's bootstrap
+//! token, the setup's packages and settings, and its first administrator, who chooses their own
+//! password (the one it is made with is random and kept nowhere). Its health is read from its own
+//! address with the health-only support key its customer's administrator gave
+//! (`/api/support/report`), and from nothing else: the control plane holds no record of it. An
+//! incident's every change of status is said in an update, and updates stay as they were posted. A
+//! recovery request is decided by an operator other than who asked for it.
 
 use crate::fleet::{placed, refresh_cell};
+use crate::partners::names;
 use crate::{at, obj, operator};
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 use ferrum_domain::util::{elevated, id, rows, s};
-use ferrum_kernel::{Ctx, Doc, DocHook, Error, HookCtx, Kernel, Result};
+use ferrum_kernel::{Ctx, Doc, DocHook, Error, HookCtx, Kernel, Result, Tx};
 use serde_json::{Value, json};
 use std::time::Duration;
 use uuid::Uuid;
@@ -110,6 +114,70 @@ impl DocHook for WorkspaceHook {
         }
         Ok(())
     }
+
+    async fn action(&self, hc: &mut HookCtx<'_>, name: &str, doc: &Doc, _params: &Value) -> Result<Option<Value>> {
+        if name != "provision" {
+            return Ok(None);
+        }
+        if !operator(hc.ctx) {
+            return Err(Error::Forbidden("a fleet operator makes workspaces on cells".into()));
+        }
+        Ok(Some(provision(hc.kernel, &elevated(hc.ctx), hc.tx, doc).await?))
+    }
+}
+
+/// A first password for an administrator who will choose their own: long, random, of every kind of
+/// character the platform asks for, and kept nowhere.
+fn throwaway_password() -> String {
+    format!("{}{}-Aa9", Uuid::new_v4().simple(), Uuid::new_v4().simple())
+}
+
+/// Makes `workspace` on its cell, once, from its setup: what the cell answered, or why not.
+pub(crate) async fn provision(k: &Kernel, ctx: &Ctx, tx: &mut Tx, workspace: &Doc) -> Result<Value> {
+    let me = id(workspace, "id").ok_or_else(|| Error::internal("a workspace without an id"))?;
+    if let Some(on) = s(workspace, "provisioned_at") {
+        return Err(Error::invalid(format!("it was made on its cell on {}", on.get(..10).unwrap_or(on))));
+    }
+    if s(workspace, "status") != Some("Onboarding") {
+        return Err(Error::invalid("only a workspace being onboarded is made on its cell"));
+    }
+    let admin = s(workspace, "admin_email").ok_or_else(|| Error::field("admin_email", "names its first administrator"))?;
+    let cell_id = id(workspace, "cell").ok_or_else(|| Error::field("cell", "is where it is made"))?;
+    let cell = k.get_tx(ctx, tx, "Cell", cell_id, false).await?;
+    let name = s(&cell, "cell_name").unwrap_or_default().to_string();
+    let api = s(&cell, "api_address").filter(|a| good_address(a)).ok_or_else(|| Error::invalid(format!("{name} has no API address to make workspaces at")))?;
+    let token = k.secret(tx, ctx.tenant, "Cell", cell_id, "provision_token").await?.ok_or_else(|| Error::invalid(format!("{name} has no bootstrap token")))?;
+    let (packages, settings) = match id(workspace, "template") {
+        Some(t) => {
+            let template = k.get_tx(ctx, tx, "SetupTemplate", t, false).await?;
+            (names(&template, "packages"), template.get("settings").cloned().filter(|v| !v.is_null()))
+        }
+        None => (vec![], None),
+    };
+    let body = json!({"slug": s(workspace, "slug"), "name": s(workspace, "customer_name"), "admin_email": admin, "admin_password": throwaway_password(),
+                      "packages": packages, "settings": settings});
+    let url = format!("{}/api/tenants", api.trim_end_matches('/'));
+    let (client, url) = k.vetted_client(&url, k.settings.webhooks_allow_private, Duration::from_secs(30), "Ferrum control plane").await?;
+    let answer = client
+        .post(url)
+        .header("x-ferrum-bootstrap-token", token)
+        .json(&body)
+        .send()
+        .await
+        .map_err(|e| Error::invalid(format!("{name} cannot be reached: {e}")))?;
+    let code = answer.status().as_u16();
+    let said: Value = answer.json().await.unwrap_or(Value::Null);
+    match code {
+        200..=299 => {}
+        401 | 403 => return Err(Error::invalid(format!("{name} refused its bootstrap token"))),
+        _ => {
+            let why = said.get("error").or_else(|| said.get("message")).and_then(Value::as_str).map_or_else(|| format!("it answered {code}"), str::to_string);
+            return Err(Error::invalid(format!("{name} refused it: {why}")));
+        }
+    }
+    let made = Utc::now().to_rfc3339();
+    k.set_values_tx(ctx, tx, "HostedWorkspace", me, obj(json!({"provisioned_at": made}))).await?;
+    Ok(json!({"provisioned_at": made, "cell": name, "packages": packages, "administrator": admin}))
 }
 
 /// Reads every open workspace's health from its address with its support key, holding no
