@@ -11,10 +11,13 @@
 //! * `partners`: partners and their tiers, setup templates, support cases due by plan, and
 //!   revenue statements.
 //! * `site`: cells' reports and the public status, and the customers' and partners' pages.
+//! * `billing`: with ERP (the connector package `control_erp`), each billed workspace invoiced once
+//!   a month through ERP, for its days in the month.
 //!
 //! This app's own design; no code was copied (docs/PROVENANCE.md). Hooks are registered per entity,
 //! so a workspace without the `control` package never runs them.
 
+mod billing;
 mod fleet;
 mod hosting;
 mod partners;
@@ -50,16 +53,26 @@ pub fn register(hooks: &mut HookRegistry) {
         .register("Partner", Arc::new(partners::PartnerHook))
         .register("SetupTemplate", Arc::new(partners::TemplateHook))
         .register("SupportCase", Arc::new(partners::CaseHook));
+    hooks.scoped(&[CONNECTOR_PACKAGE.to_string()], |h| {
+        h.register("HostedWorkspace", Arc::new(billing::BillingHook));
+    });
     hooks.add_site("control", Arc::new(site::ControlSite));
 }
+
+/// The connector with ERP's package.
+pub const CONNECTOR_PACKAGE: &str = "control_erp";
+
+/// The manifest of the connector app with ERP (`connectors/erp/app.yaml`): its package is
+/// `control_erp`, its code this crate's. It ships with the Control Plane.
+pub const CONNECTOR_MANIFEST: &str = include_str!("../connectors/erp/app.yaml");
 
 /// This app's reports: none of its own yet.
 pub fn reports() -> Vec<Arc<dyn ReportSource>> {
     vec![]
 }
 
-/// Upkeep: certifications that lapsed, cells' health, rollouts moved on, and workspaces' health
-/// read from their cells.
+/// Upkeep: certifications that lapsed, cells' health, rollouts moved on, workspaces' health read
+/// from their cells, and, with ERP, the months ended invoiced.
 pub async fn maintenance(k: &Kernel) -> Result<()> {
     maintenance_at(k, Utc::now()).await
 }
@@ -77,13 +90,20 @@ pub async fn maintenance_at(k: &Kernel, now: DateTime<Utc>) -> Result<()> {
                 return Ok(());
             }
             let ctx = Ctx::system(tenant, schema);
+            // `now`'s day where the control plane is (at its zone's offset today).
+            let today = now.with_timezone(ctx.now_local().offset()).date_naive();
             let mut tx = k.db.tenant_tx(tenant).await?;
-            partners::lapse(k, &ctx, &mut tx, now.date_naive()).await?;
+            partners::lapse(k, &ctx, &mut tx, today).await?;
             fleet::refresh_cells(k, &ctx, &mut tx, now).await?;
             fleet::advance(k, &ctx, &mut tx, now).await?;
             tx.commit().await?;
             // Each workspace's cell is asked with no transaction open.
             hosting::read_health(k, &ctx, now).await?;
+            if ctx.schema.packages.iter().any(|p| p == CONNECTOR_PACKAGE) {
+                let mut tx = k.db.tenant_tx(tenant).await?;
+                billing::invoice(k, &ctx, &mut tx, today).await?;
+                tx.commit().await?;
+            }
             Ok::<(), Error>(())
         };
         if let Err(e) = run.await {
@@ -124,5 +144,7 @@ mod tests {
         let files = UI.iter().map(|(p, b)| (p.to_string(), b.to_vec())).collect();
         let ui = ferrum_apps::ui::prepare("control", files).expect("ui/dist is an interface release");
         assert!(UI.iter().any(|(p, _)| *p == "index.html") && !UI.iter().any(|(p, _)| p.starts_with('.')), "{}", ui.digest);
+        let connector = ferrum_apps::AppManifest::parse(CONNECTOR_MANIFEST).expect("connectors/erp/app.yaml");
+        assert_eq!(connector.packages, vec![CONNECTOR_PACKAGE.to_string()]);
     }
 }

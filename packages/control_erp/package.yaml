@@ -1,0 +1,30 @@
+package: control_erp
+version: 0.1.0
+label: Control Plane and ERP
+description: Hosted workspaces invoiced through ERP once a month to the customer each names, for their days in the month at what each pays a month.
+depends: [control, selling, accounting]
+field_prefix: bill_
+
+modules:
+  - name: hosting_billing
+    label: Hosting Billing
+    icon: receipt
+    order: 65
+    items: [HostingInvoice, HostingBilling]
+
+overlays:
+  - entity: HostedWorkspace
+    ops:
+      - {op: add_field, column: true, after: monthly_amount, field: {name: bill_customer, type: link, to: Customer, label: Billed To, in_filter: true, description: "The customer in ERP invoiced for it each month; without one, it is not invoiced"}}
+      - {op: add_field, column: true, after: bill_customer, field: {name: bill_from, type: date, label: Billed From, description: "The first day invoiced: the day it was made on its cell when empty"}}
+      - {op: add_field, column: true, after: bill_from, field: {name: bill_until, type: date, label: Billed Until, description: "The last day invoiced: the day it was closed, unless set"}}
+
+roles:
+  - name: Fleet Operator
+    permissions:
+      - {entity: HostingBilling, read: true, write: true, create: true}
+      - {entity: HostingInvoice, read: true, export: true}
+      - {entity: Customer, read: true}
+      - {entity: Company, read: true}
+      - {entity: Item, read: true}
+      - {entity: SalesInvoice, read: true}
