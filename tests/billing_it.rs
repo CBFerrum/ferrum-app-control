@@ -92,6 +92,7 @@ async fn scenario() {
     packages.extend(ferrum_app_erp::packages().expect("ERP's packages"));
     packages.extend(ferrum_app_control::packages().expect("app packages"));
     let catalog = Catalog::from_packages(packages).expect("catalog");
+    assert_eq!(catalog.links_out_of_reach(ferrum_app_control::CONNECTOR_PACKAGE), Vec::<String>::new(), "whoever links a record can look it up");
     let mut hooks = HookRegistry::default();
     ferrum_domain::register(&mut hooks);
     ferrum_app_erp::register(&mut hooks);
