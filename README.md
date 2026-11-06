@@ -146,6 +146,8 @@ records, in a workspace whose day is never UTC's:
 
 | Version | Highlights |
 |---|---|
+| **0.5.2** | Rebuilt with Ferrum-Frontend a64416a: a box whose default is 1 shows ticked. |
+| **0.5.1** | A new incident's Public box shows ticked, as it is saved. |
 | **0.5.0** | A workspace's health counts what its installed apps say of their own parts, IoT Edge's gateways among them. |
 | **0.4.1** | Rebuilt with Ferrum-Frontend a76295e: times on a person's own clock when they chose one. Today is the workspace's day, not UTC's. |
 | **0.4.0** | Each workspace's daily usage from its health report; with ERP, people and storage beyond its terms charged at the month's peak. |
