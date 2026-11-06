@@ -243,6 +243,15 @@ async fn ask(k: &Kernel, address: &str, key: &str) -> (&'static str, Vec<String>
         code => return unreachable(format!("it answered {code}")),
     }
     let Ok(report) = answer.json::<Value>().await else { return unreachable("its report could not be read".into()) };
+    let problems = problems_of(&report);
+    let version = report.get("version").and_then(Value::as_str).map(str::to_string);
+    (if problems.is_empty() { "Healthy" } else { "Degraded" }, problems, version, usage(&report))
+}
+
+/// What a health report says is wrong: events not delivered, jobs failed, a long queue, and what
+/// each installed app says of its own part (`apps`, IoT Edge's gateways among them), named by its
+/// package.
+pub(crate) fn problems_of(report: &Value) -> Vec<String> {
     let n = |p: &str| report.pointer(p).and_then(Value::as_i64).unwrap_or(0);
     let mut problems = Vec::new();
     if n("/events/dead") > 0 {
@@ -254,8 +263,11 @@ async fn ask(k: &Kernel, address: &str, key: &str) -> (&'static str, Vec<String>
     if n("/events/pending") > 1000 {
         problems.push(format!("{} events are waiting", n("/events/pending")));
     }
-    let version = report.get("version").and_then(Value::as_str).map(str::to_string);
-    (if problems.is_empty() { "Healthy" } else { "Degraded" }, problems, version, usage(&report))
+    for (app, health) in report.get("apps").and_then(Value::as_object).into_iter().flatten() {
+        let said = health.get("problems").and_then(Value::as_array).into_iter().flatten().filter_map(Value::as_str);
+        problems.extend(said.map(|p| format!("{app}: {p}")));
+    }
+    problems
 }
 
 /// What a health report says the workspace uses: (active people, bytes its files take), when it
@@ -378,6 +390,14 @@ impl DocHook for RecoveryHook {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn problems_from_a_health_report() {
+        let report = json!({"events": {"dead": 2, "pending": 3}, "jobs": {"failed": 0},
+                            "apps": {"edge": {"gateways": 5, "silent": 1, "problems": ["1 of 5 gateways not heard from for 15 minutes", 7]}, "erp": {"problems": []}}});
+        assert_eq!(problems_of(&report), ["2 events could not be delivered", "edge: 1 of 5 gateways not heard from for 15 minutes"]);
+        assert!(problems_of(&json!({"version": "0.4.0", "events": {"pending": 1001}})).iter().eq(["1001 events are waiting"]), "an older server's report");
+    }
 
     #[test]
     fn usage_from_a_health_report() {

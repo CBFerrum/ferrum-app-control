@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.5.0
+
+A workspace's health counts what its installed apps say of their own parts (FERRUM-IND-021): the
+support report's `apps` (Ferrum PR 90), each app's problems named by its package. IoT Edge says how
+many of its gateways have gone quiet or report problems, so a partner sees their customers'
+gateways in its portfolio, and the customer on their page. A server that does not report it yet
+reads as before.
+
 ## 0.4.1
 
 Rebuilt with Ferrum-Frontend a76295e: its pages show times on a person's own clock when they chose one on their Account page, while today and due dates stay on the workspace's day. Its pages count today on the workspace's day, not UTC's, so the day's figures are right in the evening west of Greenwich and the early morning east of it.
