@@ -20,8 +20,10 @@ sqlx = { version = "0.9", default-features = false, features = ["runtime-tokio",
 uuid = { version = "1.10", features = ["v4", "v7", "serde"] }
 
 [dev-dependencies]
-# Its tests check that its interface is a release the platform takes.
+# Its tests check that its interface is a release the platform takes, and its connector with ERP
+# runs on ERP's records (customers, items, invoices).
 ferrum-apps = { git = "https://github.com/CBFerrum/Ferrum", branch = "main" }
+ferrum-app-erp = { git = "https://github.com/CBFerrum/ferrum-app-erp", branch = "main" }
 tokio = { version = "1.45", features = ["rt-multi-thread", "macros", "sync", "time", "signal", "net", "io-util"] }
 
 [lints.clippy]

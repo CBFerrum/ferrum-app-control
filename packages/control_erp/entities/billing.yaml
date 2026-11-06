@@ -1,0 +1,26 @@
+- name: HostingBilling
+  label: Hosting Billing
+  kind: settings
+  module: hosting_billing
+  description: "Where hosted workspaces are invoiced from, and as what."
+  fields:
+    - {name: company, type: link, to: Company, required: true}
+    - {name: item, type: link, to: Item, required: true, description: "What hosting is invoiced as"}
+
+- name: HostingInvoice
+  label: Hosting Invoice
+  label_plural: Hosting Invoices
+  kind: master
+  module: hosting_billing
+  title_field: workspace
+  description: One month of a hosted workspace, invoiced once through ERP after the month, for its days in it.
+  fields:
+    - {name: workspace, type: link, to: HostedWorkspace, required: true, read_only: true, in_list: true, in_filter: true}
+    - {name: month, type: date, required: true, read_only: true, in_list: true, in_filter: true, description: "Its first day"}
+    - {name: period_from, type: date, read_only: true}
+    - {name: period_to, type: date, read_only: true}
+    - {name: days, type: int, read_only: true, in_list: true}
+    - {name: amount, type: currency, read_only: true, in_list: true}
+    - {name: sales_invoice, type: link, to: SalesInvoice, read_only: true, in_list: true}
+  unique: [[workspace, month]]
+  list: {columns: [workspace, month, days, amount, sales_invoice], sort: month desc}

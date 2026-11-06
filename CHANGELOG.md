@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.3.0
+
+Hosting invoiced through ERP (FERRUM-CLOUD-003).
+
+- **Control Plane and ERP** (`control-erp`, package `control_erp`): a connector that ships with
+  the Control Plane and is offered where ERP is installed.
+  - Hosting Billing names the company invoicing and the item hosting is invoiced as.
+  - A hosted workspace names whom to bill (Billed To), and optionally its first and last days
+    billed. Otherwise billing runs from the day it was made on its cell to the day it was closed.
+  - Once a month has ended, upkeep invoices each billed, active or closed workspace for its days
+    in it, at what it pays a month, as an ERP Sales Invoice left for accounts to issue. A month cut
+    short pays its days' share. A Hosting Invoice keeps the month, unique per workspace and month,
+    so a month is never invoiced twice.
+- **Statements:** a partner's statement counts what each workspace was invoiced for the month
+  through ERP. Without an invoice, it counts what an active workspace pays a month, as before.
+- **The control plane's day:** months, the day a workspace was made or closed, statements and
+  certifications go by its workspace's own day, not UTC's.
+- The Control Plane's sidebar shows the connector's Hosting Billing module where it is installed.
+
 ## 0.2.1
 
 Rebuilt with Ferrum-Frontend bb60115: a record page reads an empty number or check as the server does, so an action whose condition needs one shows, and a workspace's settings open as their one record.

@@ -28,6 +28,7 @@ jobs:
     env:
       CARGO_TERM_COLOR: always
       FERRUM_CONTROL_TEST_DATABASE_URL: postgres://ferrum:ferrum@localhost:5432/ferrum_control_test
+      FERRUM_CONTROL_ERP_TEST_DATABASE_URL: postgres://ferrum:ferrum@localhost:5432/ferrum_control_erp_test
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
@@ -40,6 +41,7 @@ jobs:
           psql postgres://postgres:postgres@localhost:5432/postgres -v ON_ERROR_STOP=1 <<'SQL'
           create role ferrum login password 'ferrum';
           create database ferrum_control_test owner ferrum;
+          create database ferrum_control_erp_test owner ferrum;
           SQL
       - run: cargo fmt -- --check
       - run: cargo clippy --all-targets -- -D warnings
