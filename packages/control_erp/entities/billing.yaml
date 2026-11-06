@@ -21,6 +21,8 @@
     - {name: period_to, type: date, read_only: true}
     - {name: days, type: int, read_only: true, in_list: true}
     - {name: amount, type: currency, read_only: true, in_list: true}
+    - {name: peak_people, type: int, read_only: true, description: "Its most active people in the month, as its health reports counted them"}
+    - {name: peak_storage_gb, type: decimal, read_only: true, label: Peak Storage (GB)}
     - {name: sales_invoice, type: link, to: SalesInvoice, read_only: true, in_list: true}
   unique: [[workspace, month]]
   list: {columns: [workspace, month, days, amount, sales_invoice], sort: month desc}
