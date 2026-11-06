@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.4.0
+
+Usage charged beyond a workspace's terms (FERRUM-CLOUD-003).
+
+- **Workspace Usage:** each health reading keeps what the workspace uses that day: its active
+  people and its files' storage in GB, the day's last reading standing. This comes from the
+  `usage` its support report gives, from the Ferrum release that adds it; an older server says
+  nothing of it.
+- **Control Plane and ERP 0.2.0:**
+  - a workspace's terms gain People Included, Price an Extra Person, Storage Included (GB) and
+    Price an Extra GB;
+  - each month invoiced adds a line for the people beyond those included at the month's peak, and
+    one for each whole GB of storage beyond what is included at its peak;
+  - the Hosting Invoice keeps the peaks.
+
 ## 0.3.1
 
 Rebuilt with Ferrum-Frontend 24c3951: its pages show times on the workspace's clock, naming the zone when it is not the browser's, a draft numbered on submit is headed as a draft, and a record of an app that is not installed says so.

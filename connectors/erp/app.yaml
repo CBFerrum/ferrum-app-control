@@ -4,15 +4,15 @@
 # with the Control Plane.
 id: control-erp
 name: Control Plane and ERP
-version: 0.1.0
+version: 0.2.0
 publisher: cbferrum
-summary: Hosted workspaces invoiced through ERP each month, for their days, at what each pays a month
+summary: Hosted workspaces invoiced through ERP each month, for their days and their usage beyond what each pays for
 categories: [connector, finance]
 license: AGPL-3.0-only
 homepage: https://github.com/CBFerrum/ferrum-app-control
 support: https://github.com/CBFerrum/ferrum-app-control/issues
 runtime: native
 platform: ">=0.3.2, <0.4"
-requires: {control: ">=0.3", erp: ">=0.1"}
+requires: {control: ">=0.4", erp: ">=0.1"}
 packages: [control_erp]
 uninstall: ask

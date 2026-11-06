@@ -72,6 +72,11 @@ down, the cells and their workspaces carry on.
   - a month cut short pays its days' share, written "(17 of 31 days)" on the line.
 
   A Hosting Invoice keeps each month, one per workspace and month.
+- **Usage.** Each health reading keeps what a workspace uses that day (Workspace Usage): its active
+  people and the storage its files take. Its report says so from Ferrum with the support report's
+  usage; an older server says nothing of it. With ERP, a workspace's terms may name the people and
+  GB what it pays a month covers, with a price for each extra person and each extra whole GB. Its
+  month is then invoiced for its peak beyond them, a line each.
 
 ## A cell's report
 
@@ -127,10 +132,11 @@ records, in a workspace whose day is never UTC's:
   mail).
 - Backups and restores run by the cells' own tooling. A recovery request records the decision,
   not the restore.
-- Price lists, usage beyond a plan, and payment: a workspace is invoiced what it pays a month,
-  in the invoicing company's currency. A change of amount applies to the months invoiced after
-  it. Invoices are paid as ERP takes payments, and payment gateways wait for their keys. Without
-  ERP, monthly amounts are only what statements count.
+- Price lists, and payment: a workspace is invoiced what it pays a month and its usage beyond its
+  terms, in the invoicing company's currency. A change of terms applies to the months invoiced
+  after it, and usage is charged at the month's peak, not prorated. Invoices are paid as ERP takes
+  payments, and payment gateways wait for their keys. Without ERP, monthly amounts are only what
+  statements count.
 - Edge gateways' own health in a partner's portfolio, and partner certification by exams or
   trained staff.
 
@@ -138,6 +144,7 @@ records, in a workspace whose day is never UTC's:
 
 | Version | Highlights |
 |---|---|
+| **0.4.0** | Each workspace's daily usage from its health report; with ERP, people and storage beyond its terms charged at the month's peak. |
 | **0.3.1** | Rebuilt with Ferrum-Frontend 24c3951: times on the workspace's clock; drafts headed as drafts. |
 | **0.3.0** | With ERP, hosted workspaces invoiced once a month for their days (connector `control-erp`), and partners' statements count what was invoiced; days are the control plane's own. |
 | **0.2.1** | Rebuilt with Ferrum-Frontend bb60115: empty numbers read as the server reads them; settings open as their record. |
