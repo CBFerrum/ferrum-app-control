@@ -38,8 +38,11 @@ function Started() {
 const entry = bootstrap()?.app?.entry;
 const portal = entry === "portal/partner" || entry === "portal/service" ? entry : null;
 
+/** The Control Plane's packages, its connector with ERP's among them: the sidebar shows their modules. */
+const CONTROL_PACKAGES = ["control", "control_erp"];
+
 // The public status page has no sign-in and no frame: a 401 there never asks anyone to sign in.
-if (!portal && !isPublicPage()) setFrameMode("app", ["control"]);
+if (!portal && !isPublicPage()) setFrameMode("app", CONTROL_PACKAGES);
 
 const portalRoutes = [
   {
