@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.5.2
+
+Rebuilt with Ferrum-Frontend a64416a: a new record's box whose default is 1 shows ticked, as it is saved. An action's dialog says every refusal, the errors on what the action made (another record's rows) among them, and an action with parameters and a confirmation asks once.
+
 ## 0.5.1
 
 A new incident's Public box is ticked, as the incident is saved: its default is `true`, not `1`,
