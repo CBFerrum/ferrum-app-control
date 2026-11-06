@@ -52,6 +52,11 @@ down, the cells and their workspaces carry on.
   to registered when it does. A partner's members see their customers' health, renewals, support
   access ending and open cases. They onboard customers from setup templates, which are versioned:
   a workspace keeps the revision it was set up from. They raise cases, and see their statements.
+- **Made on its cell.** A workspace is made on its cell from its setup: the cell's
+  `POST /api/tenants` with the cell's bootstrap token, the setup's packages and settings, and the
+  workspace's first administrator, who chooses their own password. A fleet operator makes it with
+  Make It on Its Cell. A partner onboarding a customer with its first administrator gets it made
+  at once, or told why the cell could not. It is made once.
 - **Cases and statements.** A case is due by its workspace's support plan and severity, counted
   from when it was raised, and resolving it says how. A partner's statement is issued once a month
   has ended, once for that month, from what its customers' active workspaces pay.
@@ -86,13 +91,18 @@ walks:
 - incidents and the public status;
 - recovery requests;
 - a partner's page, onboarding, cases and statement;
+- workspaces made on their cell through a stand-in that answers as the server does: refused
+  without an administrator, an address, the right token or packages the cell has, made at once
+  for a partner's customer, and never twice;
 - a customer's own page;
 - who may do what.
 
 ## Not yet
 
-- Provisioning a cell or a workspace from here: a workspace is recorded, then made by the cell's
-  own sign-up or its operator.
+- Provisioning a cell from here: cells are made by their operators' tooling, and report in.
+- Installing a setup's store apps when its workspace is made: its administrator installs them from
+  the App Manager. The administrator's first password is chosen with sign-in's code (cells with
+  mail).
 - Backups and restores run by the cells' own tooling. A recovery request records the decision,
   not the restore.
 - Prices, invoices and payment, and amounts in more than one currency: monthly amounts are
@@ -104,6 +114,7 @@ walks:
 
 | Version | Highlights |
 |---|---|
+| **0.2.0** | Workspaces made on their cell from their setup with the cell's bootstrap token, at once when a partner onboards a customer with its first administrator. |
 | **0.1.7** | The public status page at `/control/status/{workspace}`: each region's cells, open incidents with their updates, coming maintenance and what was resolved in the last three days, for anyone, signed in or not. |
 | **0.1.6** | Rebuilt with Ferrum-Frontend 00dea07: a workflow state's kept fields are read-only, its needed ones required. |
 | **0.1.5** | Personal-data requests find customer contacts, their support cases and restore requests. |

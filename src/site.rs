@@ -10,7 +10,8 @@
 //! * `GET /mine`: the workspaces the caller is the contact for, with their health, their cell's,
 //!   coming maintenance, incidents, recovery requests and cases.
 //! * `GET /partner`: a partner member's portfolio, statements and setup templates.
-//! * `POST /partner/onboard`: a workspace for a partner's new customer.
+//! * `POST /partner/onboard`: a workspace for a partner's new customer, made on its cell at once when
+//!   its first administrator is named.
 //! * `POST /case`: a support case for a workspace the caller is the contact for, or whose partner
 //!   they are with.
 
@@ -284,7 +285,7 @@ async fn onboard(k: &Kernel, user: &Ctx, raw: &[u8]) -> Result<SiteResponse> {
     let p = partner_of(k, &ctx, &mut tx, &user.email).await?.ok_or_else(|| Error::Forbidden("a partner's members onboard their customers".into()))?;
     let pid = id(&p, "id").unwrap_or_default();
     let mut doc = Doc::new();
-    for f in ["slug", "customer_name", "address", "region", "contact_email", "plan", "support_plan", "monthly_amount", "term_end"] {
+    for f in ["slug", "customer_name", "address", "region", "contact_email", "admin_email", "plan", "support_plan", "monthly_amount", "term_end"] {
         if let Some(v) = b.get(f).filter(|v| !v.is_null()) {
             doc.insert(f.into(), v.clone());
         }
@@ -305,7 +306,24 @@ async fn onboard(k: &Kernel, user: &Ctx, raw: &[u8]) -> Result<SiteResponse> {
         None => None,
     };
     tx.commit().await?;
-    Ok(reply(json!({"slug": s(&made, "slug"), "cell": cell})))
+    // With its first administrator named, it is made on its cell at once; when the cell cannot, it
+    // stays onboarding, for an operator to make it there.
+    let (provisioned, provision_error) = if s(&made, "admin_email").is_some() {
+        let mut tx = k.db.tenant_tx(user.tenant).await?;
+        match crate::hosting::provision(k, &ctx, &mut tx, &made).await {
+            Ok(_) => {
+                tx.commit().await?;
+                (true, None)
+            }
+            Err(e) => {
+                tx.rollback().await?;
+                (false, Some(e.to_string()))
+            }
+        }
+    } else {
+        (false, None)
+    };
+    Ok(reply(json!({"slug": s(&made, "slug"), "cell": cell, "provisioned": provisioned, "provision_error": provision_error})))
 }
 
 async fn case(k: &Kernel, user: &Ctx, raw: &[u8]) -> Result<SiteResponse> {

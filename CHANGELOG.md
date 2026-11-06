@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.2.0
+
+Workspaces made on their cell (FERRUM-CLOUD-001, FERRUM-PARTNER-001).
+
+- A cell has its API address and its bootstrap token, sealed like its report token.
+- A hosted workspace names its first administrator. Make It on Its Cell (a fleet operator, while
+  it is onboarding) asks the cell's `POST /api/tenants`, with the bootstrap token, for the
+  workspace: its slug, its customer's name, its setup's packages and settings, and its
+  administrator. The first password is random and kept nowhere; the administrator chooses their
+  own. The control plane records when the workspace was made, and makes it once.
+- A refusal says why: no administrator, no address or token, the token refused, or what the cell
+  said (a package it lacks, a slug taken).
+- A partner onboarding a customer with its first administrator gets the workspace made on its
+  cell at once. Where the cell cannot make it, the workspace is still recorded, and the answer says
+  why, for an operator to make it later.
+- Personal-data requests reach a workspace's first administrator.
+
 ## 0.1.7
 
 The public status page: anyone opens `/control/status/{workspace}` without signing in (`shell.public`) and reads each region's cells and their state, the incidents told publicly with their updates, newest first, coming maintenance in each cell's window, and what was resolved in the last three days, read again every minute. Its headline is the worst state of any cell, or says how many incidents are open. It draws what `/api/site/{workspace}/control/status` answers, which names no customer, and points programs there. Built with Ferrum-Frontend 01b8ff0 (FERRUM-CLOUD-004).
