@@ -5,7 +5,7 @@
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { type FormEvent, useState } from "react";
-import { api, errorMessage } from "@ferrum/client";
+import { api, errorMessage, todayIso } from "@ferrum/client";
 import { Badge, Button, EmptyState, ErrorState, Field, PageLoading, toast, useShellTitle } from "@ferrum/kit";
 import { access, moment, tone } from "./words";
 
@@ -139,7 +139,7 @@ export function ServicePage() {
   const q = useQuery({ queryKey: ["control", "mine"], queryFn: ({ signal }) => api.get<{ workspaces: Workspace[] }>(`${BASE}/mine`, {}, signal), refetchInterval: 60_000 });
   if (q.error) return <ErrorState error={q.error} onRetry={() => void q.refetch()} />;
   if (!q.data) return <PageLoading />;
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayIso();
   return (
     <div className="stack np-page">
       <div className="page-head">
