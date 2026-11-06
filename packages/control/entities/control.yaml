@@ -199,7 +199,7 @@
     - {name: status, type: select, options: [Investigating, Identified, Monitoring, Resolved], default: Investigating, in_list: true, in_filter: true}
     - {name: cells, type: table, of: IncidentCell, required: true}
     - {name: updates, type: table, of: IncidentUpdate, required: true}
-    - {name: public, type: check, default: 1, description: "Shown on the status page"}
+    - {name: public, type: check, default: true, description: "Shown on the status page"}
     - {name: started_at, type: datetime, read_only: true, no_copy: true}
     - {name: resolved_at, type: datetime, read_only: true, no_copy: true}
   list: {columns: [title, severity, status, started_at], sort: started_at desc}

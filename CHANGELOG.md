@@ -8,6 +8,9 @@ many of its gateways have gone quiet or report problems, so a partner sees their
 gateways in its portfolio, and the customer on their page. A server that does not report it yet
 reads as before.
 
+A new incident's Public box is ticked, as it is saved: its default is `true`, not `1`, which a
+new form showed unticked while saving the incident as public.
+
 ## 0.4.1
 
 Rebuilt with Ferrum-Frontend a76295e: its pages show times on a person's own clock when they chose one on their Account page, while today and due dates stay on the workspace's day. Its pages count today on the workspace's day, not UTC's, so the day's figures are right in the evening west of Greenwich and the early morning east of it.
