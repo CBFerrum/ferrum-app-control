@@ -5,7 +5,7 @@
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { type FormEvent, useState } from "react";
-import { api, ApiError, errorMessage } from "@ferrum/client";
+import { api, ApiError, errorMessage, todayIso } from "@ferrum/client";
 import { Badge, Button, EmptyState, ErrorState, Field, PageLoading, toast, useShellTitle } from "@ferrum/kit";
 import { access, ends, tone } from "./words";
 
@@ -65,7 +65,7 @@ export function PartnerPage() {
   if (q.error) return <ErrorState error={q.error} onRetry={() => void q.refetch()} />;
   if (!q.data) return <PageLoading />;
   const { partner, workspaces, statements, templates } = q.data;
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayIso();
   const onboard = (e: FormEvent) => {
     e.preventDefault();
     void run("onboard", () => api.post(`${BASE}/partner/onboard`, { ...form, template: form.template || undefined }), `${form.customer_name} is onboarding`).then((ok) => {

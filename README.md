@@ -144,6 +144,7 @@ records, in a workspace whose day is never UTC's:
 
 | Version | Highlights |
 |---|---|
+| **0.4.1** | Rebuilt with Ferrum-Frontend a76295e: times on a person's own clock when they chose one. Today is the workspace's day, not UTC's. |
 | **0.4.0** | Each workspace's daily usage from its health report; with ERP, people and storage beyond its terms charged at the month's peak. |
 | **0.3.1** | Rebuilt with Ferrum-Frontend 24c3951: times on the workspace's clock; drafts headed as drafts. |
 | **0.3.0** | With ERP, hosted workspaces invoiced once a month for their days (connector `control-erp`), and partners' statements count what was invoiced; days are the control plane's own. |
