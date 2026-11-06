@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.5.1
+
+A new incident's Public box is ticked, as the incident is saved: its default is `true`, not `1`,
+which a new form showed unticked while saving the incident as public. An operator leaving the box
+alone to keep an incident internal would have put it on the status page.
+
 ## 0.5.0
 
 A workspace's health counts what its installed apps say of their own parts (FERRUM-IND-021): the
