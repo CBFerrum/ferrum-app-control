@@ -223,7 +223,8 @@ async fn scenario() {
     let db = Db::connect(DbConfig { url, max_connections: 16, ..Default::default() }).await.expect("connect");
     sqlx::raw_sql("drop schema if exists public cascade; create schema public;").execute(&db.pool).await.expect("reset");
     let mut packages = ferrum_domain::packages().expect("platform packages");
-    packages.extend(ferrum_app_control::packages().expect("app packages"));
+    // The Control Plane alone: its connector with ERP needs ERP's packages (tests/billing_it.rs).
+    packages.extend(ferrum_app_control::packages().expect("app packages").into_iter().filter(|p| p.name() != ferrum_app_control::CONNECTOR_PACKAGE));
     let catalog = Catalog::from_packages(packages).expect("catalog");
     let mut hooks = HookRegistry::default();
     ferrum_domain::register(&mut hooks);
