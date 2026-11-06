@@ -1,6 +1,6 @@
 id: control
 name: Control Plane
-version: 0.3.1
+version: 0.4.0
 publisher: cbferrum
 summary: "Ferrum Cloud's control plane: cells and their health, releases by digest, staged rollouts, incidents and status, recovery requests, and partners' portfolios"
 description: README.md

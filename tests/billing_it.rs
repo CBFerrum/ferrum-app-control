@@ -169,6 +169,24 @@ async fn scenario() {
     let made_days = 28 - made_on + 1;
     let made_feb = (3100.0 * f64::from(made_days) / 28.0 * 100.0).round() / 100.0;
 
+    // One that pays for 10 people and 5 GB a month, and grew past both in January, as its health
+    // reports counted (read in the control plane's upkeep; set here as it would have kept them).
+    let growing = uid(&t
+        .insert(
+            &op,
+            "HostedWorkspace",
+            workspace(
+                "growing",
+                json!({"bill_customer": acme.to_string(), "bill_from": "2026-01-01", "monthly_amount": "1000", "bill_people_included": 10,
+                       "bill_person_price": "50", "bill_storage_included_gb": "5", "bill_gb_price": "2"}),
+            ),
+        )
+        .await["id"]);
+    let system = ferrum_domain::util::elevated(&a);
+    for (day, people, gb) in [("2026-01-05", 8, "3.2"), ("2026-01-20", 13, "7.4")] {
+        t.insert(&system, "WorkspaceUsage", json!({"workspace": growing.to_string(), "day": day, "people": people, "storage_gb": gb})).await;
+    }
+
     // ───────────── each month after it ends, once ─────────────
     t.upkeep("2026-03-15T12:00:00Z").await;
     assert_eq!(
@@ -184,6 +202,17 @@ async fn scenario() {
     let line = &inv["items"][0];
     assert_eq!((line["item"].as_str(), dec(&line["price_list_rate"])), (Some(hosting.to_string().as_str()), 1700.0));
     assert!(line["description"].as_str().unwrap().ends_with("2026-01-15 to 2026-01-31 (17 of 31 days)"), "{line}");
+    // Its usage beyond its terms, at January's peak: 3 people and 3 whole GB (of 2.4 over).
+    assert_eq!(
+        t.months(growing).await,
+        vec![("2026-01-01".to_string(), 31, 1156.0), ("2026-02-01".to_string(), 28, 1000.0)],
+        "1000, 3 × 50 and 3 × 2; nothing read in February"
+    );
+    let jan = t.find("HostingInvoice", json!([["workspace", "=", growing.to_string()], ["month", "=", "2026-01-01"]])).await.remove(0);
+    assert_eq!((jan["peak_people"].as_i64(), dec(&jan["peak_storage_gb"])), (Some(13), 7.4));
+    let inv = t.get("SalesInvoice", uid(&jan["sales_invoice"])).await;
+    let lines: Vec<(f64, f64)> = inv["items"].as_array().unwrap().iter().map(|l| (dec(&l["qty"]), dec(&l["price_list_rate"]))).collect();
+    assert_eq!(lines, vec![(1.0, 1000.0), (3.0, 50.0), (3.0, 2.0)]);
     t.upkeep("2026-03-20T12:00:00Z").await;
     assert_eq!((t.months(acme_ws).await.len(), t.months(made).await.len()), (2, 1), "a month is invoiced once");
 

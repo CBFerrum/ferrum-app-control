@@ -191,23 +191,43 @@ pub(crate) async fn read_health(k: &Kernel, ctx: &Ctx, now: DateTime<Utc>) -> Re
         asks.push((me, s(&w, "address").unwrap_or_default().to_string(), key));
     }
     tx.commit().await?;
+    // The day the readings are kept for: the control plane's own.
+    let day = now.with_timezone(ctx.now_local().offset()).date_naive();
     for (me, address, key) in asks {
-        let (health, problems, version) = match key {
+        let (health, problems, version, used) = match key {
             Some(key) => ask(k, &address, &key).await,
-            None => ("Unknown", vec!["no support key to read its health with".into()], None),
+            None => ("Unknown", vec!["no support key to read its health with".into()], None, None),
         };
         let problems = if problems.is_empty() { Value::Null } else { json!(problems.join("; ")) };
         let values = json!({"health": health, "health_problems": problems, "running_version": version, "checked_at": now.to_rfc3339()});
         let mut tx = k.db.tenant_tx(ctx.tenant).await?;
         k.set_values_tx(ctx, &mut tx, "HostedWorkspace", me, obj(values)).await?;
+        // What it uses, the day's last reading kept.
+        if let Some((people, bytes)) = used {
+            let numbers = obj(json!({"people": people, "storage_gb": gigabytes(bytes).to_string()}));
+            let kept: Option<Uuid> = sqlx::query_scalar("select id from e_workspace_usage where tenant_id = $1 and workspace = $2 and day = $3")
+                .bind(ctx.tenant)
+                .bind(me)
+                .bind(day)
+                .fetch_optional(&mut *tx)
+                .await?;
+            match kept {
+                Some(row) => k.set_values_tx(ctx, &mut tx, "WorkspaceUsage", row, numbers).await?,
+                None => {
+                    let mut row = numbers;
+                    row.extend(obj(json!({"workspace": me.to_string(), "day": day.to_string()})));
+                    k.insert_tx(ctx, &mut tx, "WorkspaceUsage", row).await?;
+                }
+            }
+        }
         tx.commit().await?;
     }
     Ok(())
 }
 
 /// What the workspace at `address` says of itself to a health-only key.
-async fn ask(k: &Kernel, address: &str, key: &str) -> (&'static str, Vec<String>, Option<String>) {
-    let unreachable = |why: String| ("Unreachable", vec![why], None);
+async fn ask(k: &Kernel, address: &str, key: &str) -> (&'static str, Vec<String>, Option<String>, Option<(i64, i64)>) {
+    let unreachable = |why: String| ("Unreachable", vec![why], None, None);
     let url = format!("{}/api/support/report", address.trim_end_matches('/'));
     let (client, url) = match k.vetted_client(&url, k.settings.webhooks_allow_private, Duration::from_secs(10), "Ferrum control plane").await {
         Ok(c) => c,
@@ -235,7 +255,19 @@ async fn ask(k: &Kernel, address: &str, key: &str) -> (&'static str, Vec<String>
         problems.push(format!("{} events are waiting", n("/events/pending")));
     }
     let version = report.get("version").and_then(Value::as_str).map(str::to_string);
-    (if problems.is_empty() { "Healthy" } else { "Degraded" }, problems, version)
+    (if problems.is_empty() { "Healthy" } else { "Degraded" }, problems, version, usage(&report))
+}
+
+/// What a health report says the workspace uses: (active people, bytes its files take), when it
+/// says.
+pub(crate) fn usage(report: &Value) -> Option<(i64, i64)> {
+    let u = report.get("usage")?;
+    Some((u.get("people")?.as_i64()?.max(0), u.get("storage_bytes")?.as_i64()?.max(0)))
+}
+
+/// Gigabytes from bytes, to a hundredth.
+pub(crate) fn gigabytes(bytes: i64) -> rust_decimal::Decimal {
+    ferrum_domain::util::round(rust_decimal::Decimal::from(bytes) / rust_decimal::Decimal::from(1_000_000_000i64), 2)
 }
 
 pub struct IncidentHook;
@@ -346,6 +378,15 @@ impl DocHook for RecoveryHook {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn usage_from_a_health_report() {
+        assert_eq!(usage(&json!({"usage": {"people": 12, "storage_bytes": 2_500_000_000i64}})), Some((12, 2_500_000_000)));
+        assert_eq!(usage(&json!({"version": "0.4.0"})), None, "an older server says nothing of it");
+        assert_eq!(usage(&json!({"usage": {"people": "12"}})), None);
+        assert_eq!(gigabytes(2_500_000_000), rust_decimal::Decimal::new(25, 1));
+        assert_eq!(gigabytes(1), rust_decimal::Decimal::ZERO);
+    }
 
     #[test]
     fn addresses_and_slugs() {
