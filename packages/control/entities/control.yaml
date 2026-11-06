@@ -126,6 +126,21 @@
     - {name: provision, label: Make It on Its Cell, permission: write, condition: "doc.status == 'Onboarding'"}
   list: {columns: [slug, customer_name, cell, health, status], sort: slug asc}
 
+- name: WorkspaceUsage
+  label: Workspace Usage
+  label_plural: Workspace Usage
+  kind: master
+  module: control
+  title_field: workspace
+  description: What a hosted workspace used on a day, as its health report counts it (its active people and the storage its files take), the day's last reading kept.
+  fields:
+    - {name: workspace, type: link, to: HostedWorkspace, required: true, read_only: true, in_list: true, in_filter: true}
+    - {name: day, type: date, required: true, read_only: true, in_list: true, in_filter: true}
+    - {name: people, type: int, read_only: true, in_list: true}
+    - {name: storage_gb, type: decimal, read_only: true, in_list: true, label: Storage (GB)}
+  unique: [[workspace, day]]
+  list: {columns: [workspace, day, people, storage_gb], sort: day desc}
+
 - name: RolloutWave
   label: Wave
   kind: child
