@@ -143,26 +143,60 @@ async fn data_plane(k: Arc<Kernel>) -> String {
         while let Ok((mut sock, _)) = listener.accept().await {
             let k = k.clone();
             tokio::spawn(async move {
-                let (mut buf, mut n) = (vec![0u8; 16384], 0);
+                let (mut buf, mut n) = (vec![0u8; 65536], 0);
                 while !buf[..n].windows(4).any(|w| w == b"\r\n\r\n") {
                     match sock.read(&mut buf[n..]).await {
                         Ok(0) | Err(_) => break,
                         Ok(m) => n += m,
                     }
                 }
-                let head = String::from_utf8_lossy(&buf[..n]).to_string();
+                let end = buf[..n].windows(4).position(|w| w == b"\r\n\r\n").map_or(n, |p| p + 4);
+                let head = String::from_utf8_lossy(&buf[..end]).to_string();
+                let header = |wanted: &str| {
+                    head.lines().find_map(|l| {
+                        let (name, value) = l.split_once(':')?;
+                        name.trim().eq_ignore_ascii_case(wanted).then(|| value.trim().to_string())
+                    })
+                };
+                // What a request carries after its head.
+                let length: usize = header("content-length").and_then(|v| v.parse().ok()).unwrap_or(0);
+                while n < end + length {
+                    match sock.read(&mut buf[n..]).await {
+                        Ok(0) | Err(_) => break,
+                        Ok(m) => n += m,
+                    }
+                }
+                let sent = buf[end..n.min(end + length)].to_vec();
+                let method = head.split_whitespace().next().unwrap_or_default().to_string();
                 let path = head.split_whitespace().nth(1).unwrap_or_default().to_string();
-                let key = head.lines().find_map(|l| {
-                    let (name, value) = l.split_once(':')?;
-                    name.eq_ignore_ascii_case("authorization").then(|| value.trim().strip_prefix("Bearer ").unwrap_or_default().to_string())
-                });
-                let (code, body) = answer(&k, &path, key).await;
+                let key = header("authorization").map(|v| v.strip_prefix("Bearer ").unwrap_or_default().to_string());
+                let (code, body) = if (method.as_str(), path.as_str()) == ("POST", "/api/tenants") {
+                    make(&k, header("x-ferrum-bootstrap-token"), &sent).await
+                } else {
+                    answer(&k, &path, key).await
+                };
                 let resp = format!("HTTP/1.1 {code} X\r\ncontent-type: application/json\r\ncontent-length: {}\r\nconnection: close\r\n\r\n{body}", body.len());
                 let _ = sock.write_all(resp.as_bytes()).await;
             });
         }
     });
     format!("http://127.0.0.1:{port}")
+}
+
+/// The cell's bootstrap token in the test.
+const BOOTSTRAP: &str = "cell-bootstrap-0123456789abcdef0123456789abcdef";
+
+/// A cell making a workspace, as the server does (server/src/controllers/system.rs): only with its
+/// bootstrap token, then the workspace as asked, or why not.
+async fn make(k: &Kernel, token: Option<String>, body: &[u8]) -> (u16, String) {
+    if token.as_deref() != Some(BOOTSTRAP) {
+        return (403, json!({"error": "tenant creation requires the bootstrap token"}).to_string());
+    }
+    let Ok(new) = serde_json::from_slice::<NewTenant>(body) else { return (400, json!({"error": "not a workspace"}).to_string()) };
+    match k.create_tenant(new).await {
+        Ok(id) => (201, json!({"id": id}).to_string()),
+        Err(e) => (422, json!({"error": e.to_string()}).to_string()),
+    }
 }
 
 async fn answer(k: &Kernel, path: &str, key: Option<String>) -> (u16, String) {
@@ -598,6 +632,62 @@ async fn scenario() {
         (zeta_ws["status"].as_str(), uid(&zeta_ws["partner"]), zeta_ws["template_revision"].as_i64(), uid(&zeta_ws["cell"])),
         (Some("Onboarding"), northwind, Some(2), us1)
     );
+
+    // ───────────── made on its cell ─────────────
+    refused(t.update(&op1, "Cell", us1, json!({"api_address": "ftp://us-1.example"})).await, "invalid", "where the cell answers");
+    let zeta_id = uid(&zeta_ws["id"]);
+    refused(t.act(&op1, "HostedWorkspace", zeta_id, "provision", Value::Null).await, "invalid", "names its first administrator");
+    t.update(&op1, "HostedWorkspace", zeta_id, json!({"admin_email": "admin@zeta.test"})).await.unwrap();
+    refused(t.act(&op1, "HostedWorkspace", zeta_id, "provision", Value::Null).await, "invalid", "us-1 has no API address");
+    t.update(&op1, "Cell", us1, json!({"api_address": address, "provision_token": "not-the-cells-token"})).await.unwrap();
+    refused(t.act(&op1, "HostedWorkspace", zeta_id, "provision", Value::Null).await, "invalid", "us-1 refused its bootstrap token");
+    t.update(&op1, "Cell", us1, json!({"provision_token": BOOTSTRAP})).await.unwrap();
+    // Its setup names packages the cell does not have: the cell says so, and it stays onboarding.
+    refused(t.act(&op1, "HostedWorkspace", zeta_id, "provision", Value::Null).await, "invalid", "us-1 refused it");
+    assert!(t.get("HostedWorkspace", zeta_id).await["provisioned_at"].is_null());
+    // A role that may write workspaces, without running the fleet.
+    t.k.set_role_permission(&t.admin, "Workspace Clerk", &rule(json!({"entity": "HostedWorkspace", "read": true, "write": true}))).await.unwrap();
+    let ws_clerk = t.user("clerk2@cloud.test", &["Workspace Clerk"]).await;
+    refused(t.act(&ws_clerk, "HostedWorkspace", zeta_id, "provision", Value::Null).await, "forbidden", "a fleet operator");
+    // A partner's customer, with a setup the cell can make and its first administrator: made at once.
+    let setup = json!({"template_name": "Starter", "packages": "contacts", "settings": {"timezone": "Asia/Kolkata"}, "partner": northwind.to_string()});
+    t.insert(&op1, "SetupTemplate", setup).await;
+    let kappa = json!({"slug": "kappa", "customer_name": "Kappa Co", "address": "https://kappa.us.example", "region": "us", "template": "Starter",
+                       "admin_email": "boss@kappa.test"});
+    let made = site(&k, tenant, Some(&pat), "POST", "/partner/onboard", &[], kappa).await.expect("onboarded");
+    assert!(made["provisioned"] == true && made["provision_error"].is_null(), "{made}");
+    // The cell has it, with the setup's packages and settings and its administrator, whose first
+    // password nobody kept.
+    let mut tx = k.db.system_tx().await.unwrap();
+    let kappa_tenant: Uuid = sqlx::query_scalar("select id from tenant where slug = 'kappa'").fetch_one(&mut *tx).await.unwrap();
+    tx.commit().await.unwrap();
+    assert!(k.registry.schema(kappa_tenant).await.unwrap().packages.iter().any(|p| p == "contacts"));
+    let mut tx = k.db.tenant_tx(kappa_tenant).await.unwrap();
+    let admins: i64 = sqlx::query_scalar("select count(*) from app_user where tenant_id = $1 and lower(email::text) = 'boss@kappa.test'")
+        .bind(kappa_tenant)
+        .fetch_one(&mut *tx)
+        .await
+        .unwrap();
+    tx.commit().await.unwrap();
+    assert_eq!(admins, 1);
+    assert!(k.login("kappa", "boss@kappa.test", "Correct-Horse-9").await.is_err(), "a password of their own to choose");
+    let kappa_ws =
+        t.k.list(
+            &t.admin,
+            "HostedWorkspace",
+            &ListQuery { filters: ferrum_kernel::query::parse_filters(&json!([["slug", "=", "kappa"]])).unwrap(), ..Default::default() },
+        )
+        .await
+        .unwrap()
+        .rows;
+    let kappa_id = uid(&kappa_ws[0]["id"]);
+    assert!(t.get("HostedWorkspace", kappa_id).await["provisioned_at"].is_string());
+    refused(t.act(&op1, "HostedWorkspace", kappa_id, "provision", Value::Null).await, "invalid", "was made on its cell on");
+    // Where the cell cannot make it, the workspace is still recorded, and the partner told why.
+    let lambda = json!({"slug": "lambda", "customer_name": "Lambda", "address": "https://lambda.us.example", "region": "us", "template": "Retail starter",
+                        "admin_email": "boss@lambda.test"});
+    let made = site(&k, tenant, Some(&pat), "POST", "/partner/onboard", &[], lambda).await.expect("recorded");
+    assert!(made["provisioned"] == false && made["provision_error"].as_str().is_some_and(|e| e.contains("us-1 refused it")), "{made}");
 
     // ───────────── cases, due by plan ─────────────
     let raised =

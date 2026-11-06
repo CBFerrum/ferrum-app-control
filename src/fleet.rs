@@ -183,6 +183,9 @@ impl DocHook for CellHook {
     }
 
     async fn validate(&self, hc: &mut HookCtx<'_>, doc: &Doc) -> Result<()> {
+        if s(doc, "api_address").is_some_and(|a| !crate::hosting::good_address(a)) {
+            return Err(Error::field("api_address", "is https://… where the cell answers"));
+        }
         if let Some(cell) = id(doc, "id") {
             let runs = placed(hc.tx, hc.ctx.tenant, cell, None).await?;
             if int(doc, "capacity").is_some_and(|c| c < runs) {
