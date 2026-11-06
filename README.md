@@ -5,7 +5,8 @@ workspace of its own, apart from the cells that run customers' workspaces:
 - the cells and how each is doing, from what its tooling reports;
 - releases by digest, rolled out in stages within maintenance windows;
 - incidents, a public status, and recovery requests;
-- partners: their customers, setups, cases, statements and certification.
+- partners: their customers, setups, cases, statements and certification;
+- with ERP, each hosted workspace invoiced once a month for its days.
 
 It holds where each workspace runs and on what terms, and never a workspace's records. If it is
 down, the cells and their workspaces carry on.
@@ -13,7 +14,7 @@ down, the cells and their workspaces carry on.
 | | |
 |---|---|
 | 🛰️ App | `control`, native, in the server |
-| 🧩 Package | `control` |
+| 🧩 Package | `control`; with ERP, the connector `control-erp` (package `control_erp`) |
 | 🖥️ Interface | its own, at `/control/`: cells by region, rollouts wave by wave, open incidents, workspaces that are not healthy |
 | 🌐 Portal | a partner's customers at `/portal/partner/`, and a customer's service at `/portal/service/` |
 | 🔐 Roles | Fleet Operator, Release Manager |
@@ -59,7 +60,18 @@ down, the cells and their workspaces carry on.
   at once, or told why the cell could not. It is made once.
 - **Cases and statements.** A case is due by its workspace's support plan and severity, counted
   from when it was raised, and resolving it says how. A partner's statement is issued once a month
-  has ended, once for that month, from what its customers' active workspaces pay.
+  has ended, once for that month. It counts what each of its customers' workspaces was invoiced
+  for that month through ERP, or else what an active one pays a month.
+- **Invoiced through ERP.** With ERP installed, the connector Control Plane and ERP (`control-erp`)
+  bills hosted workspaces. Hosting Billing names the company invoicing and the item hosting is
+  invoiced as. A workspace names whom to bill (Billed To, an ERP customer), and optionally the
+  first and last days billed. Otherwise billing runs from the day it was made on its cell to the
+  day it was closed, both by the control plane's own day. Once a month has ended, upkeep invoices
+  it for each billed workspace, once, as an ERP Sales Invoice left for accounts to issue:
+  - its days in the month at what it pays a month;
+  - a month cut short pays its days' share, written "(17 of 31 days)" on the line.
+
+  A Hosting Invoice keeps each month, one per workspace and month.
 
 ## A cell's report
 
@@ -97,6 +109,16 @@ walks:
 - a customer's own page;
 - who may do what.
 
+`tests/billing_it.rs` (`FERRUM_CONTROL_ERP_TEST_DATABASE_URL`) runs the connector with ERP's
+records, in a workspace whose day is never UTC's:
+- months invoiced once after they end, the first from the day billing starts or the day the
+  workspace was made, by the control plane's day;
+- none for a workspace with nobody to bill, or not made yet;
+- the last month up to the day billing ends, and a workspace closed without one billed up to the
+  day it closed;
+- a partner's statement counting what was invoiced;
+- who may do what.
+
 ## Not yet
 
 - Provisioning a cell from here: cells are made by their operators' tooling, and report in.
@@ -105,8 +127,10 @@ walks:
   mail).
 - Backups and restores run by the cells' own tooling. A recovery request records the decision,
   not the restore.
-- Prices, invoices and payment, and amounts in more than one currency: monthly amounts are
-  metadata for statements.
+- Price lists, usage beyond a plan, and payment: a workspace is invoiced what it pays a month,
+  in the invoicing company's currency. A change of amount applies to the months invoiced after
+  it. Invoices are paid as ERP takes payments, and payment gateways wait for their keys. Without
+  ERP, monthly amounts are only what statements count.
 - Edge gateways' own health in a partner's portfolio, and partner certification by exams or
   trained staff.
 
@@ -114,6 +138,7 @@ walks:
 
 | Version | Highlights |
 |---|---|
+| **0.3.0** | With ERP, hosted workspaces invoiced once a month for their days (connector `control-erp`), and partners' statements count what was invoiced; days are the control plane's own. |
 | **0.2.1** | Rebuilt with Ferrum-Frontend bb60115: empty numbers read as the server reads them; settings open as their record. |
 | **0.2.0** | Workspaces made on their cell from their setup with the cell's bootstrap token, at once when a partner onboards a customer with its first administrator. |
 | **0.1.7** | The public status page at `/control/status/{workspace}`: each region's cells, open incidents with their updates, coming maintenance and what was resolved in the last three days, for anyone, signed in or not. |

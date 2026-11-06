@@ -3,7 +3,8 @@
 //! template is versioned: changing what it installs is a new revision, and a workspace keeps the
 //! revision it was set up from. A support case is due by its workspace's support plan and its
 //! severity, and resolving it says how. A partner's revenue statement is issued once a month has
-//! ended, once for that month, from what its customers' workspaces pay.
+//! ended, once for that month, from what its customers' workspaces were invoiced for it through ERP
+//! (with the connector), or else what each active one pays a month. Days are the workspace's.
 
 use crate::{at, obj, operator};
 use async_trait::async_trait;
@@ -49,8 +50,8 @@ impl DocHook for PartnerHook {
         "control.partner"
     }
 
-    async fn validate(&self, _hc: &mut HookCtx<'_>, doc: &Doc) -> Result<()> {
-        if s(doc, "tier").is_some_and(|t| t != "Registered") && !certified(doc, Utc::now().date_naive()) {
+    async fn validate(&self, hc: &mut HookCtx<'_>, doc: &Doc) -> Result<()> {
+        if s(doc, "tier").is_some_and(|t| t != "Registered") && !certified(doc, hc.ctx.today()) {
             return Err(Error::field("certified_until", "a certified tier needs a certification that has not lapsed"));
         }
         let mut seen = HashSet::new();
@@ -68,7 +69,7 @@ impl DocHook for PartnerHook {
             return Err(Error::Forbidden("a Fleet Operator issues statements".into()));
         }
         let partner = id(doc, "id").ok_or_else(|| Error::internal("a partner without an id"))?;
-        let today = Utc::now().date_naive();
+        let today = hc.ctx.today();
         let this_month = today.with_day(1).unwrap_or(today);
         let day = match params.get("month").and_then(Value::as_str) {
             Some(v) => NaiveDate::parse_from_str(&v[..v.len().min(10)], "%Y-%m-%d").map_err(|_| Error::field("month", "is a day of the month"))?,
@@ -87,10 +88,22 @@ impl DocHook for PartnerHook {
             return Err(Error::invalid(format!("{} already has its statement for {}", s(doc, "partner_name").unwrap_or_default(), month.format("%B %Y"))));
         }
         let share = d(doc, "revenue_share");
+        let billed = hc.ctx.schema.entity("HostingInvoice").is_some();
         let (mut lines, mut total, mut owed) = (Vec::new(), Decimal::ZERO, Decimal::ZERO);
         for w in hc.kernel.find_tx(&system, hc.tx, "HostedWorkspace", &[Filter::eq("partner", partner.to_string())], Some("slug asc"), 10_000).await? {
-            let amount = d(&w, "monthly_amount");
-            if s(&w, "status") != Some("Active") || amount <= Decimal::ZERO {
+            let me = id(&w, "id").map(|i| i.to_string()).unwrap_or_default();
+            // A month invoiced through ERP counts what was invoiced; else an active workspace's month.
+            let invoiced = if billed {
+                hc.kernel.find_tx(&system, hc.tx, "HostingInvoice", &[Filter::eq("workspace", me), Filter::eq("month", month.to_string())], None, 1).await?
+            } else {
+                vec![]
+            };
+            let amount = match invoiced.first() {
+                Some(i) => d(i, "amount"),
+                None if s(&w, "status") == Some("Active") => d(&w, "monthly_amount"),
+                None => Decimal::ZERO,
+            };
+            if amount <= Decimal::ZERO {
                 continue;
             }
             let part = round(amount * share / Decimal::ONE_HUNDRED, 2);
