@@ -6,7 +6,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { useParams } from "react-router";
-import { ApiError, api, bootstrap } from "@ferrum/client";
+import { ApiError, api, bootstrap, t } from "@ferrum/client";
 import { Badge, EmptyState, ErrorState, Spinner } from "@ferrum/kit";
 import { moment, tone } from "./words";
 
@@ -53,7 +53,7 @@ export function StatusView({ status, name, json, checked }: { status: Status; na
         </span>
       </header>
       <p className="faint">
-        Since {moment(i.started_at)}
+        {t("Since")} {moment(i.started_at)}
         {i.resolved_at ? `, resolved ${moment(i.resolved_at)}` : ""}
         {i.cells.length ? ` · ${i.cells.join(", ")}` : ""}
       </p>
@@ -73,21 +73,21 @@ export function StatusView({ status, name, json, checked }: { status: Status; na
     <div className="np-page st-page">
       <header className="stack">
         <p className="faint">{name}</p>
-        <h1 className="page-title">Service status</h1>
+        <h1 className="page-title">{t("Service status")}</h1>
       </header>
       <main id="main" className="stack" tabIndex={-1}>
-        <section className="card card-pad row" aria-label="Now" style={{ justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
+        <section className="card card-pad row" aria-label={t("Now")} style={{ justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
           <strong className="st-headline">{head.says}</strong>
           <Badge tone={tone(head.state)}>{head.state}</Badge>
         </section>
 
         <section className="stack" aria-labelledby="st-incidents">
-          <h2 id="st-incidents" className="st-h">Incidents</h2>
-          {open.length ? open.map(incident) : <p className="faint">No open incidents.</p>}
+          <h2 id="st-incidents" className="st-h">{t("Incidents")}</h2>
+          {open.length ? open.map(incident) : <p className="faint">{t("No open incidents.")}</p>}
         </section>
 
         <section className="stack" aria-labelledby="st-regions">
-          <h2 id="st-regions" className="st-h">Regions</h2>
+          <h2 id="st-regions" className="st-h">{t("Regions")}</h2>
           <div className="np-columns">
             {status.regions.map((r) => (
               <section key={r.region} className="card card-pad stack" aria-labelledby={`st-region-${r.region}`}>
@@ -106,7 +106,7 @@ export function StatusView({ status, name, json, checked }: { status: Status; na
         </section>
 
         <section className="stack" aria-labelledby="st-maintenance">
-          <h2 id="st-maintenance" className="st-h">Coming maintenance</h2>
+          <h2 id="st-maintenance" className="st-h">{t("Coming maintenance")}</h2>
           {status.maintenance.length ? (
             <ul className="stack">
               {status.maintenance.map((m, n) => (
@@ -118,20 +118,20 @@ export function StatusView({ status, name, json, checked }: { status: Status; na
               ))}
             </ul>
           ) : (
-            <p className="faint">None planned.</p>
+            <p className="faint">{t("None planned.")}</p>
           )}
         </section>
 
         {past.length > 0 && (
           <section className="stack" aria-labelledby="st-past">
-            <h2 id="st-past" className="st-h">Resolved in the last three days</h2>
+            <h2 id="st-past" className="st-h">{t("Resolved in the last three days")}</h2>
             {past.map(incident)}
           </section>
         )}
 
         <footer className="faint">
           {checked ? `Read ${moment(checked.toISOString())}; read again every minute. ` : ""}
-          Programs read the same at <a href={json}>{json}</a>.
+          {t("Programs read the same at")} <a href={json}>{json}</a>.
         </footer>
       </main>
     </div>
@@ -147,13 +147,13 @@ export function StatusPage() {
   }, [name]);
   const q = useQuery({ queryKey: ["control", "status", tenant], queryFn: ({ signal }) => api.get<Status>(json, undefined, signal), refetchInterval: 60_000 });
   if (q.error) {
-    if (q.error instanceof ApiError && q.error.status === 404) return <EmptyState title="No status page here" icon="server" />;
+    if (q.error instanceof ApiError && q.error.status === 404) return <EmptyState title={t("No status page here")} icon="server" />;
     return <ErrorState error={q.error} onRetry={() => void q.refetch()} />;
   }
   if (!q.data) {
     return (
       <div className="np-page" role="status">
-        <Spinner /> <span className="faint">Reading the status</span>
+        <Spinner /> <span className="faint">{t("Reading the status")}</span>
       </div>
     );
   }

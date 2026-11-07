@@ -5,7 +5,7 @@
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { type FormEvent, useState } from "react";
-import { api, ApiError, errorMessage, todayIso } from "@ferrum/client";
+import { api, ApiError, errorMessage, todayIso, t as tr } from "@ferrum/client";
 import { Badge, Button, EmptyState, ErrorState, Field, PageLoading, toast, useShellTitle } from "@ferrum/kit";
 import { access, ends, tone } from "./words";
 
@@ -61,7 +61,7 @@ export function PartnerPage() {
     }
   };
   // Someone who is no partner's member is told so plainly, not shown a failure to try again.
-  if (q.error instanceof ApiError && q.error.status === 403) return <EmptyState title="This page is for a partner's members" />;
+  if (q.error instanceof ApiError && q.error.status === 403) return <EmptyState title={tr("This page is for a partner's members")} />;
   if (q.error) return <ErrorState error={q.error} onRetry={() => void q.refetch()} />;
   if (!q.data) return <PageLoading />;
   const { partner, workspaces, statements, templates } = q.data;
@@ -91,8 +91,8 @@ export function PartnerPage() {
         </div>
       </div>
       {attention.length > 0 && (
-        <section className="card card-pad stack" aria-label="Needs your attention">
-          <h3>Needs your attention</h3>
+        <section className="card card-pad stack" aria-label={tr("Needs your attention")}>
+          <h3>{tr("Needs your attention")}</h3>
           <ul className="stack">
             {attention.map((c) => (
               <li key={c.slug}>
@@ -107,17 +107,17 @@ export function PartnerPage() {
           </ul>
         </section>
       )}
-      <section className="card card-pad stack" aria-label="Your customers">
-        <h3>Your customers</h3>
+      <section className="card card-pad stack" aria-label={tr("Your customers")}>
+        <h3>{tr("Your customers")}</h3>
         <table className="table">
           <thead>
             <tr>
-              <th>Customer</th>
-              <th>Health</th>
-              <th>Plan</th>
-              <th>Renews</th>
-              <th>Support access ends</th>
-              <th>Open cases</th>
+              <th>{tr("Customer")}</th>
+              <th>{tr("Health")}</th>
+              <th>{tr("Plan")}</th>
+              <th>{tr("Renews")}</th>
+              <th>{tr("Support access ends")}</th>
+              <th>{tr("Open cases")}</th>
             </tr>
           </thead>
           <tbody>
@@ -140,49 +140,49 @@ export function PartnerPage() {
           </tbody>
         </table>
       </section>
-      <section className="card card-pad stack" aria-label="Onboard a customer">
-        <h3>Onboard a customer</h3>
+      <section className="card card-pad stack" aria-label={tr("Onboard a customer")}>
+        <h3>{tr("Onboard a customer")}</h3>
         <form className="stack" onSubmit={onboard}>
-          <Field label="Customer">
+          <Field label={tr("Customer")}>
             <input className="input" required value={form.customer_name} onChange={set("customer_name")} />
           </Field>
-          <Field label="Workspace name (lower-case letters, digits and hyphens)">
+          <Field label={tr("Workspace name (lower-case letters, digits and hyphens)")}>
             <input className="input" required pattern="[a-z0-9][a-z0-9-]{1,62}" value={form.slug} onChange={set("slug")} />
           </Field>
-          <Field label="Its address">
+          <Field label={tr("Its address")}>
             <input className="input" type="url" required placeholder="https://" value={form.address} onChange={set("address")} />
           </Field>
-          <Field label="Region">
+          <Field label={tr("Region")}>
             <input className="input" required value={form.region} onChange={set("region")} />
           </Field>
-          <Field label="Their contact">
+          <Field label={tr("Their contact")}>
             <input className="input" type="email" value={form.contact_email} onChange={set("contact_email")} />
           </Field>
-          <Field label="Set up from">
+          <Field label={tr("Set up from")}>
             <select className="input" value={form.template} onChange={set("template")}>
-              <option value="">Nothing yet</option>
+              <option value="">{tr("Nothing yet")}</option>
               {templates.map((t) => (
                 <option key={t.name} value={t.name}>
-                  {t.name} (revision {t.revision}: {t.packages.join(", ")})
+                  {tr("{name} (revision {revision}:", { name: t.name, revision: t.revision })} {t.packages.join(", ")})
                 </option>
               ))}
             </select>
           </Field>
-          <Field label="Support">
+          <Field label={tr("Support")}>
             <select className="input" value={form.support_plan} onChange={set("support_plan")}>
-              <option>Standard</option>
-              <option>Premium</option>
+              <option>{tr("Standard")}</option>
+              <option>{tr("Premium")}</option>
             </select>
           </Field>
           <Button type="submit" variant="primary" loading={busy === "onboard"}>
-            Onboard
+            {tr("Onboard")}
           </Button>
         </form>
       </section>
-      <section className="card card-pad stack" aria-label="Raise a case">
-        <h3>Raise a case</h3>
+      <section className="card card-pad stack" aria-label={tr("Raise a case")}>
+        <h3>{tr("Raise a case")}</h3>
         <form className="stack" onSubmit={raise}>
-          <Field label="For">
+          <Field label={tr("For")}>
             <select className="input" value={kase.workspace || workspaces[0]?.slug || ""} onChange={(e) => setKase({ ...kase, workspace: e.target.value })}>
               {workspaces.map((c) => (
                 <option key={c.slug} value={c.slug}>
@@ -191,31 +191,31 @@ export function PartnerPage() {
               ))}
             </select>
           </Field>
-          <Field label="Subject">
+          <Field label={tr("Subject")}>
             <input className="input" required maxLength={300} value={kase.subject} onChange={(e) => setKase({ ...kase, subject: e.target.value })} />
           </Field>
-          <Field label="How urgent">
+          <Field label={tr("How urgent")}>
             <select className="input" value={kase.severity} onChange={(e) => setKase({ ...kase, severity: e.target.value })}>
-              <option>Low</option>
-              <option>High</option>
-              <option>Critical</option>
+              <option>{tr("Low")}</option>
+              <option>{tr("High")}</option>
+              <option>{tr("Critical")}</option>
             </select>
           </Field>
-          <Field label="What happened">
+          <Field label={tr("What happened")}>
             <textarea className="input" rows={3} value={kase.details} onChange={(e) => setKase({ ...kase, details: e.target.value })} />
           </Field>
           <Button type="submit" variant="primary" loading={busy === "case"} disabled={!workspaces.length || !kase.subject.trim()}>
-            Raise it
+            {tr("Raise it")}
           </Button>
         </form>
       </section>
-      <section className="card card-pad stack" aria-label="Statements">
-        <h3>Statements</h3>
-        {statements.length === 0 && <p className="faint">None issued yet.</p>}
+      <section className="card card-pad stack" aria-label={tr("Statements")}>
+        <h3>{tr("Statements")}</h3>
+        {statements.length === 0 && <p className="faint">{tr("None issued yet.")}</p>}
         <ul className="stack">
           {statements.map((st) => (
             <li key={st.month}>
-              {st.month.slice(0, 7)} · your customers paid {st.total} · your share {st.partner_share}
+              {st.month.slice(0, 7)} {tr("· your customers paid {total} · your share {partner_share}", { total: st.total, partner_share: st.partner_share })}
             </li>
           ))}
         </ul>

@@ -8,7 +8,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { StrictMode, useEffect } from "react";
 import { createRoot } from "react-dom/client";
 import { createBrowserRouter, Link, Outlet, RouterProvider, useRouteError } from "react-router";
-import { bootstrap, isPublicPage, routeBase, shell } from "@ferrum/client";
+import { bootstrap, isPublicPage, routeBase, shell, t } from "@ferrum/client";
 import { ConfirmHost, EmptyState, ErrorState, Toaster } from "@ferrum/kit";
 import { RequireAuth, setFrameMode } from "@ferrum/records/frame";
 import "./styles.css";
@@ -23,7 +23,7 @@ function RouteError() {
 
 function NotFound({ back = "Go to the control plane" }: { back?: string }) {
   return (
-    <EmptyState title="Page not found">
+    <EmptyState title={t("Page not found")}>
       <Link to="/">{back}</Link>
     </EmptyState>
   );
@@ -76,7 +76,7 @@ const staffRoutes = [
     children: [
       // For anyone with the address.
       { path: "status/:tenant", lazy: () => import("./Status").then((m) => ({ Component: m.StatusPage })) },
-      { path: "status/*", element: <EmptyState title="Page not found" icon="server" /> },
+      { path: "status/*", element: <EmptyState title={t("Page not found")} icon="server" /> },
       {
         // For the operators: signed in, in the frame.
         element: <RequireAuth />,

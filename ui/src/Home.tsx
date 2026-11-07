@@ -4,7 +4,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router";
-import { api, docPath } from "@ferrum/client";
+import { api, docPath, t } from "@ferrum/client";
 import { Badge, ErrorState, PageLoading, useShellTitle } from "@ferrum/kit";
 import { tone } from "./words";
 
@@ -55,10 +55,10 @@ export function Home() {
   return (
     <div className="np-page stack">
       <header className="row" style={{ justifyContent: "space-between" }}>
-        <h2>Cells</h2>
-        <Link to="/e/Cell/new">New cell</Link>
+        <h2>{t("Cells")}</h2>
+        <Link to="/e/Cell/new">{t("New cell")}</Link>
       </header>
-      {cells.data.length === 0 && <p className="faint">No cell yet: add the deployments that run customers' workspaces.</p>}
+      {cells.data.length === 0 && <p className="faint">{t("No cell yet: add the deployments that run customers' workspaces.")}</p>}
       {groupBy(cells.data, "region").map(([region, rows]) => (
         <section key={region} className="card card-pad stack" aria-label={region}>
           <h3>{region}</h3>
@@ -70,7 +70,7 @@ export function Home() {
                   <Badge tone={tone(String(c.health))}>{String(c.health)}</Badge>
                 </span>
                 <span className="faint">
-                  {String(c.placed ?? 0)} of {String(c.capacity)} workspaces · {String(c.reported_version ?? "not reported")}
+                  {String(c.placed ?? 0)} of {String(c.capacity)} {t("workspaces ·")} {String(c.reported_version ?? "not reported")}
                 </span>
                 {c.problems ? <span>{String(c.problems)}</span> : null}
               </Link>
@@ -78,12 +78,12 @@ export function Home() {
           </div>
         </section>
       ))}
-      <section className="card card-pad stack" aria-label="Rollouts">
+      <section className="card card-pad stack" aria-label={t("Rollouts")}>
         <header className="row" style={{ justifyContent: "space-between" }}>
-          <h3>Rollouts</h3>
-          <Link to="/e/Rollout/new">New rollout</Link>
+          <h3>{t("Rollouts")}</h3>
+          <Link to="/e/Rollout/new">{t("New rollout")}</Link>
         </header>
-        {rollouts.data.length === 0 && <p className="faint">None running.</p>}
+        {rollouts.data.length === 0 && <p className="faint">{t("None running.")}</p>}
         {rollouts.data.map((r) => (
           <div key={r.id} className="stack">
             <Link to={`/e/Rollout/${r.id}`}>
@@ -94,12 +94,12 @@ export function Home() {
           </div>
         ))}
       </section>
-      <section className="card card-pad stack" aria-label="Incidents">
+      <section className="card card-pad stack" aria-label={t("Incidents")}>
         <header className="row" style={{ justifyContent: "space-between" }}>
-          <h3>Open incidents</h3>
-          <Link to="/e/ServiceIncident/new">New incident</Link>
+          <h3>{t("Open incidents")}</h3>
+          <Link to="/e/ServiceIncident/new">{t("New incident")}</Link>
         </header>
-        {incidents.data.length === 0 && <p className="faint">None open.</p>}
+        {incidents.data.length === 0 && <p className="faint">{t("None open.")}</p>}
         <ul className="stack">
           {incidents.data.map((i) => (
             <li key={i.id}>
@@ -108,9 +108,9 @@ export function Home() {
           ))}
         </ul>
       </section>
-      <section className="card card-pad stack" aria-label="Workspaces not healthy">
-        <h3>Workspaces not healthy</h3>
-        {ill.data.length === 0 && <p className="faint">Every workspace whose health can be read is healthy.</p>}
+      <section className="card card-pad stack" aria-label={t("Workspaces not healthy")}>
+        <h3>{t("Workspaces not healthy")}</h3>
+        {ill.data.length === 0 && <p className="faint">{t("Every workspace whose health can be read is healthy.")}</p>}
         <ul className="stack">
           {ill.data.map((w) => (
             <li key={w.id}>

@@ -5,7 +5,7 @@
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { type FormEvent, useState } from "react";
-import { api, errorMessage, todayIso } from "@ferrum/client";
+import { api, errorMessage, todayIso, t } from "@ferrum/client";
 import { Badge, Button, EmptyState, ErrorState, Field, PageLoading, toast, useShellTitle } from "@ferrum/kit";
 import { access, moment, tone } from "./words";
 
@@ -42,7 +42,7 @@ function Card({ w, today }: { w: Workspace; today: string }) {
       await qc.invalidateQueries({ queryKey: ["control", "mine"] });
       setSubject("");
       setDetails("");
-      toast("Your case is with support", "success");
+      toast(t("Your case is with support"), "success");
     } catch (err) {
       toast(errorMessage(err), "error");
     } finally {
@@ -64,14 +64,14 @@ function Card({ w, today }: { w: Workspace; today: string }) {
       </p>
       {w.cell && (
         <p>
-          It runs on {w.cell.cell} in {w.cell.region}: <Badge tone={tone(w.cell.state)}>{w.cell.state}</Badge>
+          {t("It runs on {cell} in {region}:", { cell: w.cell.cell, region: w.cell.region })} <Badge tone={tone(w.cell.state)}>{w.cell.state}</Badge>
           {w.cell.last_backup ? ` Last backup ${moment(w.cell.last_backup)}.` : " No backup reported."}
           {w.cell.window.from ? ` Its maintenance window: ${moment(w.cell.window.from)} to ${moment(w.cell.window.to)}.` : ""}
         </p>
       )}
       {w.maintenance.map((m) => (
         <p key={m.release}>
-          Ferrum {m.release} comes in the window {moment(m.from)} to {moment(m.to)}.
+          {t("Ferrum {release} comes in the window", { release: m.release })} {moment(m.from)} to {moment(m.to)}.
         </p>
       ))}
       {w.incidents.map((i) => (
@@ -90,7 +90,7 @@ function Card({ w, today }: { w: Workspace; today: string }) {
       ))}
       {w.recovery.length > 0 && (
         <div className="stack">
-          <h4>Recovery requests</h4>
+          <h4>{t("Recovery requests")}</h4>
           <ul className="stack">
             {w.recovery.map((r, n) => (
               <li key={n}>
@@ -102,31 +102,31 @@ function Card({ w, today }: { w: Workspace; today: string }) {
         </div>
       )}
       <div className="stack">
-        <h4>Cases</h4>
+        <h4>{t("Cases")}</h4>
         <ul className="stack">
           {w.cases.map((c, n) => (
             <li key={n}>
-              {c.subject} · {c.severity} · due {moment(c.due_at)} <Badge tone={tone(c.status)}>{c.status}</Badge>
+              {t("{subject} · {severity} · due", { subject: c.subject, severity: c.severity })} {moment(c.due_at)} <Badge tone={tone(c.status)}>{c.status}</Badge>
               {c.resolution ? ` · ${c.resolution}` : ""}
             </li>
           ))}
         </ul>
         <form className="stack" onSubmit={(e) => void raise(e)}>
-          <Field label="Subject">
+          <Field label={t("Subject")}>
             <input className="input" required maxLength={300} value={subject} onChange={(e) => setSubject(e.target.value)} />
           </Field>
-          <Field label="How urgent">
+          <Field label={t("How urgent")}>
             <select className="input" value={severity} onChange={(e) => setSeverity(e.target.value)}>
-              <option>Low</option>
-              <option>High</option>
-              <option>Critical</option>
+              <option>{t("Low")}</option>
+              <option>{t("High")}</option>
+              <option>{t("Critical")}</option>
             </select>
           </Field>
-          <Field label="What happened">
+          <Field label={t("What happened")}>
             <textarea className="input" rows={3} value={details} onChange={(e) => setDetails(e.target.value)} />
           </Field>
           <Button type="submit" variant="primary" loading={busy} disabled={!subject.trim()}>
-            Raise a case
+            {t("Raise a case")}
           </Button>
         </form>
       </div>
@@ -144,11 +144,11 @@ export function ServicePage() {
     <div className="stack np-page">
       <div className="page-head">
         <div>
-          <h1 className="page-title">Your service</h1>
-          <p className="page-sub">How your workspaces are doing, coming maintenance, incidents and your cases.</p>
+          <h1 className="page-title">{t("Your service")}</h1>
+          <p className="page-sub">{t("How your workspaces are doing, coming maintenance, incidents and your cases.")}</p>
         </div>
       </div>
-      {q.data.workspaces.length === 0 && <EmptyState title="No workspace names you as its contact" />}
+      {q.data.workspaces.length === 0 && <EmptyState title={t("No workspace names you as its contact")} />}
       {q.data.workspaces.map((w) => (
         <Card key={w.slug} w={w} today={today} />
       ))}
