@@ -5,7 +5,7 @@
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { type FormEvent, useState } from "react";
-import { api, ApiError, errorMessage, todayIso, t as tr } from "@ferrum/client";
+import { api, ApiError, errorMessage, todayIso, t as tr, isolate } from "@ferrum/client";
 import { Badge, Button, EmptyState, ErrorState, Field, PageLoading, toast, useShellTitle } from "@ferrum/kit";
 import { access, ends, tone } from "./words";
 
@@ -40,7 +40,7 @@ export function needsAttention(list: Customer[]): Customer[] {
 }
 
 export function PartnerPage() {
-  useShellTitle("Your customers");
+  useShellTitle(tr("Your customers"));
   const qc = useQueryClient();
   const q = useQuery({ queryKey: ["control", "partner"], queryFn: ({ signal }) => api.get<Portfolio>(`${BASE}/partner`, {}, signal) });
   const [busy, setBusy] = useState<string | null>(null);
@@ -68,13 +68,13 @@ export function PartnerPage() {
   const today = todayIso();
   const onboard = (e: FormEvent) => {
     e.preventDefault();
-    void run("onboard", () => api.post(`${BASE}/partner/onboard`, { ...form, template: form.template || undefined }), `${form.customer_name} is onboarding`).then((ok) => {
+    void run("onboard", () => api.post(`${BASE}/partner/onboard`, { ...form, template: form.template || undefined }), tr("{customer_name} is onboarding", { customer_name: form.customer_name })).then((ok) => {
       if (ok) setForm({ ...form, slug: "", customer_name: "", address: "", contact_email: "" });
     });
   };
   const raise = (e: FormEvent) => {
     e.preventDefault();
-    void run("case", () => api.post(`${BASE}/case`, { ...kase, workspace: kase.workspace || workspaces[0]?.slug }), "The case is with support").then((ok) => {
+    void run("case", () => api.post(`${BASE}/case`, { ...kase, workspace: kase.workspace || workspaces[0]?.slug }), tr("The case is with support")).then((ok) => {
       if (ok) setKase({ ...kase, subject: "", details: "" });
     });
   };
@@ -84,9 +84,9 @@ export function PartnerPage() {
     <div className="stack np-page">
       <div className="page-head">
         <div>
-          <h1 className="page-title">{partner.name}</h1>
+          <h1 className="page-title">{isolate(partner.name)}</h1>
           <p className="page-sub">
-            {partner.tier} partner{partner.certified_until ? `, certified until ${partner.certified_until}` : ""}
+            {tr("{tier} partner", { tier: partner.tier })}{partner.certified_until ? tr(", certified until {certified_until}", { certified_until: partner.certified_until }) : ""}
           </p>
         </div>
       </div>
@@ -96,12 +96,12 @@ export function PartnerPage() {
           <ul className="stack">
             {attention.map((c) => (
               <li key={c.slug}>
-                <strong>{c.customer}</strong> ·{" "}
+                <strong>{isolate(c.customer)}</strong> ·{isolate(" ")}
                 {c.health === "Unreachable" || c.health === "Degraded"
                   ? `${c.health}: ${c.problems ?? ""}`
                   : c.support_access_ending
-                    ? `${access(c.support_access_ends, today).toLowerCase()}: ask them for a new health key`
-                    : `renews ${ends(c.renews_on, today)}`}
+                    ? tr("{value}: ask them for a new health key", { value: access(c.support_access_ends, today).toLowerCase() })
+                    : tr("renews {value}", { value: ends(c.renews_on, today) })}
               </li>
             ))}
           </ul>
@@ -124,16 +124,16 @@ export function PartnerPage() {
             {workspaces.map((c) => (
               <tr key={c.slug}>
                 <td>
-                  {c.customer} <span className="faint">{c.slug}</span>
+                  {isolate(c.customer)} <span className="faint">{isolate(c.slug)}</span>
                 </td>
                 <td>
-                  <Badge tone={tone(c.health)}>{c.health}</Badge>
+                  <Badge tone={tone(c.health)}>{isolate(c.health)}</Badge>
                 </td>
                 <td>
-                  {c.plan ?? ""} {c.support_plan ? `· ${c.support_plan} support` : ""}
+                  {c.plan ?? ""} {c.support_plan ? tr("· {support_plan} support", { support_plan: c.support_plan }) : ""}
                 </td>
-                <td>{ends(c.renews_on, today)}</td>
-                <td>{ends(c.support_access_ends, today)}</td>
+                <td>{isolate(ends(c.renews_on, today))}</td>
+                <td>{isolate(ends(c.support_access_ends, today))}</td>
                 <td>{c.open_cases}</td>
               </tr>
             ))}
@@ -163,7 +163,7 @@ export function PartnerPage() {
               <option value="">{tr("Nothing yet")}</option>
               {templates.map((t) => (
                 <option key={t.name} value={t.name}>
-                  {tr("{name} (revision {revision}:", { name: t.name, revision: t.revision })} {t.packages.join(", ")})
+                  {tr("{name} (revision {revision}:", { name: t.name, revision: t.revision })} {isolate(t.packages.join(", "))})
                 </option>
               ))}
             </select>
@@ -186,7 +186,7 @@ export function PartnerPage() {
             <select className="input" value={kase.workspace || workspaces[0]?.slug || ""} onChange={(e) => setKase({ ...kase, workspace: e.target.value })}>
               {workspaces.map((c) => (
                 <option key={c.slug} value={c.slug}>
-                  {c.customer}
+                  {isolate(c.customer)}
                 </option>
               ))}
             </select>
@@ -215,7 +215,7 @@ export function PartnerPage() {
         <ul className="stack">
           {statements.map((st) => (
             <li key={st.month}>
-              {st.month.slice(0, 7)} {tr("· your customers paid {total} · your share {partner_share}", { total: st.total, partner_share: st.partner_share })}
+              {isolate(st.month.slice(0, 7))} {tr("· your customers paid {total} · your share {partner_share}", { total: st.total, partner_share: st.partner_share })}
             </li>
           ))}
         </ul>

@@ -4,7 +4,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router";
-import { api, docPath, t } from "@ferrum/client";
+import { api, docPath, t, isolate } from "@ferrum/client";
 import { Badge, ErrorState, PageLoading, useShellTitle } from "@ferrum/kit";
 import { tone } from "./words";
 
@@ -34,7 +34,7 @@ function Waves({ id, names }: { id: string; names: Map<string, string> }) {
       {waves.map((w) => (
         <li key={w.id}>
           <Badge tone={tone(String(w.state))}>
-            {names.get(String(w.cell)) ?? "a cell"} · {String(w.state)}
+            {names.get(String(w.cell)) ?? t("a cell")} · {isolate(String(w.state))}
           </Badge>
         </li>
       ))}
@@ -43,7 +43,7 @@ function Waves({ id, names }: { id: string; names: Map<string, string> }) {
 }
 
 export function Home() {
-  useShellTitle("Control Plane");
+  useShellTitle(t("Control Plane"));
   const cells = useQuery({ queryKey: ["control", "cells"], queryFn: () => list("Cell", [], { sort: "cell_name asc" }), refetchInterval: 60_000 });
   const rollouts = useQuery({ queryKey: ["control", "rollouts"], queryFn: () => list("Rollout", [["status", "in", ["Running", "Halted"]]], { titles: "true" }) });
   const incidents = useQuery({ queryKey: ["control", "incidents"], queryFn: () => list("ServiceIncident", [["status", "!=", "Resolved"]]) });
@@ -61,18 +61,18 @@ export function Home() {
       {cells.data.length === 0 && <p className="faint">{t("No cell yet: add the deployments that run customers' workspaces.")}</p>}
       {groupBy(cells.data, "region").map(([region, rows]) => (
         <section key={region} className="card card-pad stack" aria-label={region}>
-          <h3>{region}</h3>
+          <h3>{isolate(region)}</h3>
           <div className="np-columns">
             {rows.map((c) => (
               <Link key={c.id} className="card card-pad stack" to={`/e/Cell/${c.id}`}>
                 <span className="row" style={{ justifyContent: "space-between" }}>
-                  <strong>{String(c.cell_name)}</strong>
-                  <Badge tone={tone(String(c.health))}>{String(c.health)}</Badge>
+                  <strong>{isolate(String(c.cell_name))}</strong>
+                  <Badge tone={tone(String(c.health))}>{isolate(String(c.health))}</Badge>
                 </span>
                 <span className="faint">
-                  {String(c.placed ?? 0)} of {String(c.capacity)} {t("workspaces ·")} {String(c.reported_version ?? "not reported")}
+                  {t("{value} of {value2}", { value: String(c.placed ?? 0), value2: String(c.capacity) })} {t("workspaces ·")} {isolate(String(c.reported_version ?? "not reported"))}
                 </span>
-                {c.problems ? <span>{String(c.problems)}</span> : null}
+                {c.problems ? <span>{isolate(String(c.problems))}</span> : null}
               </Link>
             ))}
           </div>
@@ -87,9 +87,9 @@ export function Home() {
         {rollouts.data.map((r) => (
           <div key={r.id} className="stack">
             <Link to={`/e/Rollout/${r.id}`}>
-              {String((r._titles as Record<string, string> | undefined)?.release ?? r.release)} <Badge tone={tone(String(r.status))}>{String(r.status)}</Badge>
+              {isolate(String((r._titles as Record<string, string> | undefined)?.release ?? r.release))} <Badge tone={tone(String(r.status))}>{isolate(String(r.status))}</Badge>
             </Link>
-            {r.halted_reason ? <span>{String(r.halted_reason)}</span> : null}
+            {r.halted_reason ? <span>{isolate(String(r.halted_reason))}</span> : null}
             <Waves id={r.id} names={names} />
           </div>
         ))}
@@ -103,7 +103,7 @@ export function Home() {
         <ul className="stack">
           {incidents.data.map((i) => (
             <li key={i.id}>
-              <Link to={`/e/ServiceIncident/${i.id}`}>{String(i.title)}</Link> · {String(i.severity)} <Badge tone={tone(String(i.status))}>{String(i.status)}</Badge>
+              <Link to={`/e/ServiceIncident/${i.id}`}>{isolate(String(i.title))}</Link> · {isolate(String(i.severity))} <Badge tone={tone(String(i.status))}>{isolate(String(i.status))}</Badge>
             </li>
           ))}
         </ul>
@@ -114,7 +114,7 @@ export function Home() {
         <ul className="stack">
           {ill.data.map((w) => (
             <li key={w.id}>
-              <Link to={`/e/HostedWorkspace/${w.id}`}>{String(w.slug)}</Link> · {String(w.customer_name)} <Badge tone={tone(String(w.health))}>{String(w.health)}</Badge>
+              <Link to={`/e/HostedWorkspace/${w.id}`}>{isolate(String(w.slug))}</Link> · {isolate(String(w.customer_name))} <Badge tone={tone(String(w.health))}>{isolate(String(w.health))}</Badge>
               {w.health_problems ? ` · ${String(w.health_problems)}` : ""}
             </li>
           ))}
