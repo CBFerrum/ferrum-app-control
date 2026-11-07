@@ -6,7 +6,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { useParams } from "react-router";
-import { ApiError, api, bootstrap, t } from "@ferrum/client";
+import { ApiError, api, bootstrap, t, isolate } from "@ferrum/client";
 import { Badge, EmptyState, ErrorState, Spinner } from "@ferrum/kit";
 import { moment, tone } from "./words";
 
@@ -46,22 +46,22 @@ export function StatusView({ status, name, json, checked }: { status: Status; na
   const incident = (i: Status["incidents"][number]) => (
     <article key={`${i.title}-${i.started_at ?? ""}`} className="card card-pad stack" aria-label={i.title}>
       <header className="row" style={{ justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
-        <h3 className="font-semibold">{i.title}</h3>
+        <h3 className="font-semibold">{isolate(i.title)}</h3>
         <span className="row" style={{ gap: 6 }}>
-          {i.severity && <Badge tone="neutral">{i.severity}</Badge>}
-          <Badge tone={tone(i.status)}>{i.status}</Badge>
+          {i.severity && <Badge tone="neutral">{isolate(i.severity)}</Badge>}
+          <Badge tone={tone(i.status)}>{isolate(i.status)}</Badge>
         </span>
       </header>
       <p className="faint">
-        {t("Since")} {moment(i.started_at)}
-        {i.resolved_at ? `, resolved ${moment(i.resolved_at)}` : ""}
+        {t("Since")} {isolate(moment(i.started_at))}
+        {i.resolved_at ? t(", resolved {value}", { value: moment(i.resolved_at) }) : ""}
         {i.cells.length ? ` · ${i.cells.join(", ")}` : ""}
       </p>
       {i.updates.length > 0 && (
-        <ol className="stack" aria-label={`Updates on ${i.title}, newest first`}>
+        <ol className="stack" aria-label={t("Updates on {title}, newest first", { title: i.title })}>
           {i.updates.map((u, n) => (
             <li key={n}>
-              <span className="faint">{moment(u.at)}</span> · <strong>{u.status}</strong>
+              <span className="faint">{isolate(moment(u.at))}</span> · <strong>{isolate(u.status ?? "")}</strong>
               {u.message ? `: ${u.message}` : ""}
             </li>
           ))}
@@ -72,13 +72,13 @@ export function StatusView({ status, name, json, checked }: { status: Status; na
   return (
     <div className="np-page st-page">
       <header className="stack">
-        <p className="faint">{name}</p>
+        <p className="faint">{isolate(name)}</p>
         <h1 className="page-title">{t("Service status")}</h1>
       </header>
       <main id="main" className="stack" tabIndex={-1}>
         <section className="card card-pad row" aria-label={t("Now")} style={{ justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
-          <strong className="st-headline">{head.says}</strong>
-          <Badge tone={tone(head.state)}>{head.state}</Badge>
+          <strong className="st-headline">{isolate(head.says)}</strong>
+          <Badge tone={tone(head.state)}>{isolate(head.state)}</Badge>
         </section>
 
         <section className="stack" aria-labelledby="st-incidents">
@@ -91,12 +91,12 @@ export function StatusView({ status, name, json, checked }: { status: Status; na
           <div className="np-columns">
             {status.regions.map((r) => (
               <section key={r.region} className="card card-pad stack" aria-labelledby={`st-region-${r.region}`}>
-                <h3 id={`st-region-${r.region}`} className="font-semibold">{r.region || "Unnamed region"}</h3>
+                <h3 id={`st-region-${r.region}`} className="font-semibold">{r.region || t("Unnamed region")}</h3>
                 <ul className="stack">
                   {r.cells.map((c) => (
                     <li key={c.cell} className="row" style={{ justifyContent: "space-between" }}>
-                      <span>{c.cell}</span>
-                      <Badge tone={tone(c.state)}>{c.state}</Badge>
+                      <span>{isolate(c.cell)}</span>
+                      <Badge tone={tone(c.state)}>{isolate(c.state)}</Badge>
                     </li>
                   ))}
                 </ul>
@@ -111,9 +111,9 @@ export function StatusView({ status, name, json, checked }: { status: Status; na
             <ul className="stack">
               {status.maintenance.map((m, n) => (
                 <li key={n}>
-                  {m.release ? `Ferrum ${m.release}` : "An upgrade"} on {m.cell ?? "a cell"}
-                  {m.region ? ` in ${m.region}` : ""}
-                  {m.from ? `, in its window ${moment(m.from)} to ${moment(m.to)}` : ""}
+                  {m.release ? t("Ferrum {release}", { release: m.release }) : t("An upgrade")} {t("on")} {m.cell ?? t("a cell")}
+                  {m.region ? t(" in {region}", { region: m.region }) : ""}
+                  {m.from ? t(", in its window {value} to {value2}", { value: moment(m.from), value2: moment(m.to) }) : ""}
                 </li>
               ))}
             </ul>
@@ -130,8 +130,8 @@ export function StatusView({ status, name, json, checked }: { status: Status; na
         )}
 
         <footer className="faint">
-          {checked ? `Read ${moment(checked.toISOString())}; read again every minute. ` : ""}
-          {t("Programs read the same at")} <a href={json}>{json}</a>.
+          {checked ? t("Read {value}; read again every minute. ", { value: moment(checked.toISOString()) }) : ""}
+          {t("Programs read the same at")} <a href={json}>{isolate(json)}</a>.
         </footer>
       </main>
     </div>

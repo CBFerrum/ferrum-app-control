@@ -5,7 +5,7 @@
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { type FormEvent, useState } from "react";
-import { api, errorMessage, todayIso, t } from "@ferrum/client";
+import { api, errorMessage, todayIso, t, isolate } from "@ferrum/client";
 import { Badge, Button, EmptyState, ErrorState, Field, PageLoading, toast, useShellTitle } from "@ferrum/kit";
 import { access, moment, tone } from "./words";
 
@@ -53,36 +53,36 @@ function Card({ w, today }: { w: Workspace; today: string }) {
     <section className="card card-pad stack" aria-label={w.customer}>
       <header className="row" style={{ justifyContent: "space-between" }}>
         <h3>
-          {w.customer} <span className="faint">{w.slug}</span>
+          {isolate(w.customer)} <span className="faint">{isolate(w.slug)}</span>
         </h3>
-        <Badge tone={tone(w.health)}>{w.health}</Badge>
+        <Badge tone={tone(w.health)}>{isolate(w.health)}</Badge>
       </header>
-      {w.problems && <p>{w.problems}</p>}
+      {w.problems && <p>{isolate(w.problems)}</p>}
       <p className="faint">
-        {w.version ? `Ferrum ${w.version}` : "Its version is not known yet"}
-        {w.checked_at ? `, checked ${moment(w.checked_at)}` : ""}. {access(w.support_access_ends, today)}.
+        {w.version ? t("Ferrum {version}", { version: w.version }) : t("Its version is not known yet")}
+        {w.checked_at ? t(", checked {value}", { value: moment(w.checked_at) }) : ""}. {isolate(access(w.support_access_ends, today))}.
       </p>
       {w.cell && (
         <p>
-          {t("It runs on {cell} in {region}:", { cell: w.cell.cell, region: w.cell.region })} <Badge tone={tone(w.cell.state)}>{w.cell.state}</Badge>
-          {w.cell.last_backup ? ` Last backup ${moment(w.cell.last_backup)}.` : " No backup reported."}
-          {w.cell.window.from ? ` Its maintenance window: ${moment(w.cell.window.from)} to ${moment(w.cell.window.to)}.` : ""}
+          {t("It runs on {cell} in {region}:", { cell: w.cell.cell, region: w.cell.region })} <Badge tone={tone(w.cell.state)}>{isolate(w.cell.state)}</Badge>
+          {w.cell.last_backup ? t(" Last backup {value}.", { value: moment(w.cell.last_backup) }) : t(" No backup reported.")}
+          {w.cell.window.from ? t(" Its maintenance window: {value} to {value2}.", { value: moment(w.cell.window.from), value2: moment(w.cell.window.to) }) : ""}
         </p>
       )}
       {w.maintenance.map((m) => (
         <p key={m.release}>
-          {t("Ferrum {release} comes in the window", { release: m.release })} {moment(m.from)} to {moment(m.to)}.
+          {t("Ferrum {release} comes in the window", { release: m.release })} {t("{value} to {value2}.", { value: moment(m.from), value2: moment(m.to) })}
         </p>
       ))}
       {w.incidents.map((i) => (
         <div key={i.title} className="stack">
           <strong>
-            {i.title} <Badge tone={tone(i.status)}>{i.status}</Badge>
+            {isolate(i.title)} <Badge tone={tone(i.status)}>{isolate(i.status)}</Badge>
           </strong>
           <ul className="stack">
             {i.updates.map((u, n) => (
               <li key={n}>
-                {moment(u.at)} · {u.status}: {u.message}
+                {isolate(moment(u.at))} · {isolate(u.status)}: {isolate(u.message)}
               </li>
             ))}
           </ul>
@@ -94,7 +94,7 @@ function Card({ w, today }: { w: Workspace; today: string }) {
           <ul className="stack">
             {w.recovery.map((r, n) => (
               <li key={n}>
-                {r.kind} asked {moment(r.asked_at)} <Badge tone={tone(r.status)}>{r.status}</Badge>
+                {t("{kind} asked {value}", { kind: r.kind, value: moment(r.asked_at) })} <Badge tone={tone(r.status)}>{isolate(r.status)}</Badge>
                 {r.note ? ` · ${r.note}` : ""}
               </li>
             ))}
@@ -106,7 +106,7 @@ function Card({ w, today }: { w: Workspace; today: string }) {
         <ul className="stack">
           {w.cases.map((c, n) => (
             <li key={n}>
-              {t("{subject} · {severity} · due", { subject: c.subject, severity: c.severity })} {moment(c.due_at)} <Badge tone={tone(c.status)}>{c.status}</Badge>
+              {t("{subject} · {severity} · due", { subject: c.subject, severity: c.severity })} {isolate(moment(c.due_at))} <Badge tone={tone(c.status)}>{isolate(c.status)}</Badge>
               {c.resolution ? ` · ${c.resolution}` : ""}
             </li>
           ))}
@@ -135,7 +135,7 @@ function Card({ w, today }: { w: Workspace; today: string }) {
 }
 
 export function ServicePage() {
-  useShellTitle("Your service");
+  useShellTitle(t("Your service"));
   const q = useQuery({ queryKey: ["control", "mine"], queryFn: ({ signal }) => api.get<{ workspaces: Workspace[] }>(`${BASE}/mine`, {}, signal), refetchInterval: 60_000 });
   if (q.error) return <ErrorState error={q.error} onRetry={() => void q.refetch()} />;
   if (!q.data) return <PageLoading />;
