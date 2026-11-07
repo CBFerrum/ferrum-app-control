@@ -1,6 +1,6 @@
 id: control
 name: Control Plane
-version: 0.5.6
+version: 0.5.7
 publisher: cbferrum
 summary: "Ferrum Cloud's control plane: cells and their health, releases by digest, staged rollouts, incidents and status, recovery requests, and partners' portfolios"
 description: README.md
@@ -37,3 +37,17 @@ contributes:
   # incidents told publicly and coming maintenance, from /api/site/{workspace}/control/status.
   shell.public:
     - {id: status, path: control/status, title: Service status}
+  # What the assistant should know in Control Plane's pages, and what it suggests asking there.
+  shell.assistant:
+    - id: control
+      title: "Control Plane"
+      instructions: >-
+        Ferrum Cloud's control plane. A Release is a Candidate until Qualified or Withdrawn. A Rollout takes it to
+        cells in waves (RolloutWave: Pending, Upgrading, Soaking, Done, Failed) and is Halted when a wave fails. A
+        ServiceIncident and its updates (Investigating, Identified, Monitoring, Resolved) are what the status page
+        shows. A HostedWorkspace is a customer's workspace on a cell (Onboarding, Active, Closed). A RecoveryRequest
+        is Requested, then Approved or Refused, then Done.
+      suggestions:
+        - "Which rollouts are running or halted?"
+        - "Are there open incidents?"
+        - "Which workspaces are still onboarding?"
