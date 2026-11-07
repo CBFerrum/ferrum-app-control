@@ -1,3 +1,4 @@
+import { t } from "@ferrum/client";
 // Words and tones shared by the control plane's pages.
 
 export type Tone = "green" | "amber" | "red" | "neutral";
@@ -41,7 +42,7 @@ export function ends(day: string | null | undefined, today: string): string {
   if (n === null) return "not given";
   if (n < 0) return "ended";
   if (n === 0) return "today";
-  if (n <= 14) return `in ${n} day${n === 1 ? "" : "s"}`;
+  if (n <= 14) return (n === 1 ? t("in 1 day") : t("in {n} days", { n }));
   return day!.slice(0, 10);
 }
 
@@ -50,12 +51,12 @@ export function access(day: string | null | undefined, today: string): string {
   const when = ends(day, today);
   if (when === "not given") return "Support access is not given";
   if (when === "ended") return "Support access has ended";
-  return `Support access ends ${when}`;
+  return t("Support access ends {when}", { when });
 }
 
 /** A moment as people read it, in UTC. */
 export function moment(at?: string | null): string {
   if (!at) return "";
   const d = new Date(at);
-  return Number.isNaN(d.getTime()) ? at : `${d.toISOString().slice(0, 16).replace("T", " ")} UTC`;
+  return Number.isNaN(d.getTime()) ? at : t("{value} UTC", { value: d.toISOString().slice(0, 16).replace("T", " ") });
 }

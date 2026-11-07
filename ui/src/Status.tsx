@@ -35,7 +35,7 @@ export function overall(s: Pick<Status, "regions" | "incidents">): { state: stri
   if (worst === "Outage") return { state: worst, says: "Some systems are down" };
   if (worst === "Degraded") return { state: worst, says: "Some systems are degraded" };
   if (worst !== "Operational") return { state: worst, says: "Some systems have not reported" };
-  return open ? { state: "Degraded", says: `All systems operational, with ${open === 1 ? "an open incident" : `${open} open incidents`}` } : { state: worst, says: "All systems operational" };
+  return open ? { state: "Degraded", says: (open === 1 ? t("All systems operational, with an open incident") : t("All systems operational, with {open} open incidents", { open })) } : { state: worst, says: "All systems operational" };
 }
 
 /** The page as drawn: `json` is where programs read the same. */
@@ -143,7 +143,7 @@ export function StatusPage() {
   const json = `/api/site/${encodeURIComponent(tenant)}/control/status`;
   const name = bootstrap()?.workspace.name ?? tenant;
   useEffect(() => {
-    document.title = `Service status · ${name}`;
+    document.title = t("Service status · {name}", { name });
   }, [name]);
   const q = useQuery({ queryKey: ["control", "status", tenant], queryFn: ({ signal }) => api.get<Status>(json, undefined, signal), refetchInterval: 60_000 });
   if (q.error) {
