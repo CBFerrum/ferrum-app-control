@@ -146,6 +146,7 @@ records, in a workspace whose day is never UTC's:
 
 | Version | Highlights |
 |---|---|
+| **0.5.9** | Its names in Arabic and Hindi; the last English sentences translated. |
 | **0.5.8** | Sentences built in code are words too, in Arabic and Hindi. |
 | **0.5.7** | The assistant knows its records. |
 | **0.5.6** | Rebuilt with Ferrum-Frontend 5b22e7b: its own words in Arabic and Hindi. |

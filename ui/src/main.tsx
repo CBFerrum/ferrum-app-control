@@ -24,7 +24,7 @@ function RouteError() {
   return <ErrorState error={useRouteError()} onRetry={() => window.location.reload()} />;
 }
 
-function NotFound({ back = "Go to the control plane" }: { back?: string }) {
+function NotFound({ back = t("Go to the control plane") }: { back?: string }) {
   return (
     <EmptyState title={t("Page not found")}>
       <Link to="/">{isolate(back)}</Link>
@@ -61,7 +61,7 @@ const portalRoutes = [
       portal === "portal/partner"
         ? { index: true, lazy: () => import("./Partner").then((m) => ({ Component: m.PartnerPage })) }
         : { index: true, lazy: () => import("./Service").then((m) => ({ Component: m.ServicePage })) },
-      { path: "*", element: <NotFound back="Go back" /> },
+      { path: "*", get element() { return <NotFound back={t("Go back")} />; } },
     ],
   },
 ];

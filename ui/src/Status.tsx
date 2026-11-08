@@ -7,7 +7,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { useParams } from "react-router";
 import { ApiError, api, bootstrap, t, isolate } from "@ferrum/client";
-import { Badge, EmptyState, ErrorState, Spinner } from "@ferrum/kit";
+import { Badge, EmptyState, ErrorState, placed, Spinner } from "@ferrum/kit";
 import { moment, tone } from "./words";
 
 export interface Status {
@@ -31,11 +31,11 @@ export function overall(s: Pick<Status, "regions" | "incidents">): { state: stri
   const states = s.regions.flatMap((r) => r.cells.map((c) => c.state));
   const open = s.incidents.filter((i) => i.status !== "Resolved").length;
   const worst = states.reduce((w, st) => ((RANK[st] ?? 1) > (RANK[w] ?? 0) ? st : w), "Operational");
-  if (states.length === 0) return { state: "Unknown", says: "No regions are reported yet" };
-  if (worst === "Outage") return { state: worst, says: "Some systems are down" };
-  if (worst === "Degraded") return { state: worst, says: "Some systems are degraded" };
-  if (worst !== "Operational") return { state: worst, says: "Some systems have not reported" };
-  return open ? { state: "Degraded", says: (open === 1 ? t("All systems operational, with an open incident") : t("All systems operational, with {open} open incidents", { open })) } : { state: worst, says: "All systems operational" };
+  if (states.length === 0) return { state: "Unknown", says: t("No regions are reported yet") };
+  if (worst === "Outage") return { state: worst, says: t("Some systems are down") };
+  if (worst === "Degraded") return { state: worst, says: t("Some systems are degraded") };
+  if (worst !== "Operational") return { state: worst, says: t("Some systems have not reported") };
+  return open ? { state: "Degraded", says: (open === 1 ? t("All systems operational, with an open incident") : t("All systems operational, with {open} open incidents", { open })) } : { state: worst, says: t("All systems operational") };
 }
 
 /** The page as drawn: `json` is where programs read the same. */
@@ -111,7 +111,7 @@ export function StatusView({ status, name, json, checked }: { status: Status; na
             <ul className="stack">
               {status.maintenance.map((m, n) => (
                 <li key={n}>
-                  {m.release ? t("Ferrum {release}", { release: m.release }) : t("An upgrade")} {t("on")} {m.cell ?? t("a cell")}
+                  {m.release ? t("Ferrum {release} on {cell}", { release: m.release, cell: m.cell ?? t("a cell") }) : t("An upgrade on {cell}", { cell: m.cell ?? t("a cell") })}
                   {m.region ? t(" in {region}", { region: m.region }) : ""}
                   {m.from ? t(", in its window {value} to {value2}", { value: moment(m.from), value2: moment(m.to) }) : ""}
                 </li>
@@ -130,8 +130,7 @@ export function StatusView({ status, name, json, checked }: { status: Status; na
         )}
 
         <footer className="faint">
-          {checked ? t("Read {value}; read again every minute. ", { value: moment(checked.toISOString()) }) : ""}
-          {t("Programs read the same at")} <a href={json}>{isolate(json)}</a>.
+          {placed(checked ? t("Read {value}; read again every minute. Programs read the same at {link}.", { value: moment(checked.toISOString()) }) : t("Programs read the same at {link}."), { link: <a href={json}>{isolate(json)}</a> })}
         </footer>
       </main>
     </div>
