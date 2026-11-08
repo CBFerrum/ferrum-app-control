@@ -39,7 +39,7 @@ export function daysUntil(day: string | null | undefined, today: string): number
 /** When something ends, said plainly: "ended", "today", "in 3 days" or the day itself. */
 export function ends(day: string | null | undefined, today: string): string {
   const n = daysUntil(day, today);
-  if (n === null) return "not given";
+  if (n === null) return t("not given");
   if (n < 0) return "ended";
   if (n === 0) return "today";
   if (n <= 14) return (n === 1 ? t("in 1 day") : t("in {n} days", { n }));
@@ -49,8 +49,8 @@ export function ends(day: string | null | undefined, today: string): string {
 /** Where a workspace's support access stands: "Support access is not given", "… has ended", "… ends in 3 days". */
 export function access(day: string | null | undefined, today: string): string {
   const when = ends(day, today);
-  if (when === "not given") return "Support access is not given";
-  if (when === "ended") return "Support access has ended";
+  if (when === "not given") return t("Support access is not given");
+  if (when === "ended") return t("Support access has ended");
   return t("Support access ends {when}", { when });
 }
 

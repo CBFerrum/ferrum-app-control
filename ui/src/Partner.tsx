@@ -86,7 +86,7 @@ export function PartnerPage() {
         <div>
           <h1 className="page-title">{isolate(partner.name)}</h1>
           <p className="page-sub">
-            {tr("{tier} partner", { tier: partner.tier })}{partner.certified_until ? tr(", certified until {certified_until}", { certified_until: partner.certified_until }) : ""}
+            {(partner.certified_until ? tr("{tier} partner, certified until {certified_until}", { tier: partner.tier, certified_until: partner.certified_until }) : tr("{tier} partner", { tier: partner.tier }))}
           </p>
         </div>
       </div>
