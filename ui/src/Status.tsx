@@ -7,7 +7,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { useParams } from "react-router";
 import { ApiError, api, bootstrap, t, isolate } from "@ferrum/client";
-import { Badge, EmptyState, ErrorState, placed, Spinner } from "@ferrum/kit";
+import { Badge, EmptyState, ErrorState, ListSkeleton, placed } from "@ferrum/kit";
 import { moment, tone } from "./words";
 
 export interface Status {
@@ -149,12 +149,6 @@ export function StatusPage() {
     if (q.error instanceof ApiError && q.error.status === 404) return <EmptyState title={t("No status page here")} icon="server" />;
     return <ErrorState error={q.error} onRetry={() => void q.refetch()} />;
   }
-  if (!q.data) {
-    return (
-      <div className="np-page" role="status">
-        <Spinner /> <span className="faint">{t("Reading the status")}</span>
-      </div>
-    );
-  }
+  if (!q.data) return <ListSkeleton className="np-page" />;
   return <StatusView status={q.data} name={name} json={json} checked={new Date(q.dataUpdatedAt)} />;
 }

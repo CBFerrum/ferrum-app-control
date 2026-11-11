@@ -6,7 +6,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { type FormEvent, useState } from "react";
 import { api, ApiError, errorMessage, todayIso, t as tr, isolate } from "@ferrum/client";
-import { Badge, Button, EmptyState, ErrorState, Field, PageLoading, toast, useShellTitle } from "@ferrum/kit";
+import { Badge, Button, ErrorState, Field, ListSkeleton, StatePanel, toast, useShellTitle } from "@ferrum/kit";
 import { access, ends, tone } from "./words";
 
 const BASE = "/api/app/control";
@@ -61,9 +61,9 @@ export function PartnerPage() {
     }
   };
   // Someone who is no partner's member is told so plainly, not shown a failure to try again.
-  if (q.error instanceof ApiError && q.error.status === 403) return <EmptyState title={tr("This page is for a partner's members")} />;
+  if (q.error instanceof ApiError && q.error.status === 403) return <StatePanel kind="denied" title={tr("This page is for a partner's members")} />;
   if (q.error) return <ErrorState error={q.error} onRetry={() => void q.refetch()} />;
-  if (!q.data) return <PageLoading />;
+  if (!q.data) return <ListSkeleton className="np-page" />;
   const { partner, workspaces, statements, templates } = q.data;
   const today = todayIso();
   const onboard = (e: FormEvent) => {

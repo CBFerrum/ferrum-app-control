@@ -16,11 +16,11 @@
 }
 
 .st-headline {
-  font-size: 1.125rem;
+  font-size: var(--text-lg);
 }
 
 .st-h {
-  font-size: 1rem;
+  font-size: var(--text-base);
   font-weight: 600;
   margin-top: 8px;
 }
