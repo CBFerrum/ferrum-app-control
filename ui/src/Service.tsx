@@ -6,7 +6,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { type FormEvent, useState } from "react";
 import { api, errorMessage, todayIso, t, isolate } from "@ferrum/client";
-import { Badge, Button, EmptyState, ErrorState, Field, PageLoading, toast, useShellTitle } from "@ferrum/kit";
+import { Badge, Button, ErrorState, Field, ListSkeleton, StatePanel, toast, useShellTitle } from "@ferrum/kit";
 import { access, moment, tone } from "./words";
 
 const BASE = "/api/app/control";
@@ -138,7 +138,7 @@ export function ServicePage() {
   useShellTitle(t("Your service"));
   const q = useQuery({ queryKey: ["control", "mine"], queryFn: ({ signal }) => api.get<{ workspaces: Workspace[] }>(`${BASE}/mine`, {}, signal), refetchInterval: 60_000 });
   if (q.error) return <ErrorState error={q.error} onRetry={() => void q.refetch()} />;
-  if (!q.data) return <PageLoading />;
+  if (!q.data) return <ListSkeleton className="np-page" />;
   const today = todayIso();
   return (
     <div className="stack np-page">
@@ -148,7 +148,7 @@ export function ServicePage() {
           <p className="page-sub">{t("How your workspaces are doing, coming maintenance, incidents and your cases.")}</p>
         </div>
       </div>
-      {q.data.workspaces.length === 0 && <EmptyState title={t("No workspace names you as its contact")} />}
+      {q.data.workspaces.length === 0 && <StatePanel kind="empty" title={t("No workspace names you as its contact")} />}
       {q.data.workspaces.map((w) => (
         <Card key={w.slug} w={w} today={today} />
       ))}

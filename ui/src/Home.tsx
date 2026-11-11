@@ -5,7 +5,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router";
 import { api, docPath, t, isolate } from "@ferrum/client";
-import { Badge, ErrorState, PageLoading, useShellTitle } from "@ferrum/kit";
+import { Badge, ErrorState, ListSkeleton, useShellTitle } from "@ferrum/kit";
 import { tone } from "./words";
 
 export interface Row {
@@ -50,7 +50,7 @@ export function Home() {
   const ill = useQuery({ queryKey: ["control", "ill"], queryFn: () => list("HostedWorkspace", [["health", "in", ["Degraded", "Unreachable"]]]) });
   const failed = [cells, rollouts, incidents, ill].find((q) => q.isError);
   if (failed) return <ErrorState error={failed.error} onRetry={() => void failed.refetch()} />;
-  if (!cells.data || !rollouts.data || !incidents.data || !ill.data) return <PageLoading />;
+  if (!cells.data || !rollouts.data || !incidents.data || !ill.data) return <ListSkeleton className="np-page" />;
   const names = new Map(cells.data.map((c) => [c.id, String(c.cell_name)]));
   return (
     <div className="np-page stack">
