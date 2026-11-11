@@ -4,29 +4,8 @@
 @source "../../../ferrum/web/src";
 @source ".";
 
-.np-page {
-  display: grid;
-  gap: 16px;
-  padding: 16px;
-}
-
+/* The public status page: one column, centred (it has no sidebar). */
 .st-page {
   max-width: 960px;
   margin: 0 auto;
-}
-
-.st-headline {
-  font-size: var(--text-lg);
-}
-
-.st-h {
-  font-size: var(--text-base);
-  font-weight: 600;
-  margin-top: 8px;
-}
-
-.np-columns {
-  display: grid;
-  gap: 16px;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
 }

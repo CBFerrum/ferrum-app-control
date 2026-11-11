@@ -6,7 +6,8 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { type FormEvent, useState } from "react";
 import { api, errorMessage, todayIso, t, isolate } from "@ferrum/client";
-import { Badge, Button, ErrorState, Field, ListSkeleton, StatePanel, toast, useShellTitle } from "@ferrum/kit";
+import { Badge, Button, Field, HomeSection, HomeSkeleton, LoadFailed, PageHead, PageStack, Queue, QueueGrid, QueueItem, StatePanel, toast, useShellTitle } from "@ferrum/kit";
+import { IncidentCard } from "./Incident";
 import { access, moment, tone } from "./words";
 
 const BASE = "/api/app/control";
@@ -28,7 +29,7 @@ interface Workspace {
   cases: { subject: string; severity: string; status: string; due_at?: string | null; resolution?: string | null }[];
 }
 
-function Card({ w, today }: { w: Workspace; today: string }) {
+function WorkspaceSection({ w, today }: { w: Workspace; today: string }) {
   const qc = useQueryClient();
   const [subject, setSubject] = useState("");
   const [severity, setSeverity] = useState("Low");
@@ -49,69 +50,66 @@ function Card({ w, today }: { w: Workspace; today: string }) {
       setBusy(false);
     }
   };
+  const facts = [
+    w.version ? t("Ferrum {version}", { version: w.version }) : t("Its version is not known yet"),
+    w.checked_at ? t("Checked {value}", { value: moment(w.checked_at) }) : "",
+    access(w.support_access_ends, today),
+  ]
+    .filter(Boolean)
+    .join(" · ");
   return (
-    <section className="card card-pad stack" aria-label={w.customer}>
-      <header className="row" style={{ justifyContent: "space-between" }}>
-        <h3>
-          {isolate(w.customer)} <span className="faint">{isolate(w.slug)}</span>
-        </h3>
-        <Badge tone={tone(w.health)}>{isolate(w.health)}</Badge>
-      </header>
-      {w.problems && <p>{isolate(w.problems)}</p>}
-      <p className="faint">
-        {w.version ? t("Ferrum {version}", { version: w.version }) : t("Its version is not known yet")}
-        {w.checked_at ? t(", checked {value}", { value: moment(w.checked_at) }) : ""}. {isolate(access(w.support_access_ends, today))}.
-      </p>
-      {w.cell && (
-        <p>
-          {t("It runs on {cell} in {region}:", { cell: w.cell.cell, region: w.cell.region })} <Badge tone={tone(w.cell.state)}>{isolate(w.cell.state)}</Badge>
-          {w.cell.last_backup ? t(" Last backup {value}.", { value: moment(w.cell.last_backup) }) : t(" No backup reported.")}
-          {w.cell.window.from ? t(" Its maintenance window: {value} to {value2}.", { value: moment(w.cell.window.from), value2: moment(w.cell.window.to) }) : ""}
+    <HomeSection title={isolate(w.customer)} actions={<Badge tone={tone(w.health)}>{isolate(w.health)}</Badge>}>
+      <div className="grid gap-4">
+        <p className="text-sm text-muted-foreground">
+          {isolate(w.slug)} · {isolate(facts)}
+          {w.problems ? <strong className="block font-medium text-foreground">{isolate(w.problems)}</strong> : null}
         </p>
-      )}
-      {w.maintenance.map((m) => (
-        <p key={m.release}>
-          {t("Ferrum {release} comes in the window", { release: m.release })} {t("{value} to {value2}.", { value: moment(m.from), value2: moment(m.to) })}
-        </p>
-      ))}
-      {w.incidents.map((i) => (
-        <div key={i.title} className="stack">
-          <strong>
-            {isolate(i.title)} <Badge tone={tone(i.status)}>{isolate(i.status)}</Badge>
-          </strong>
-          <ul className="stack">
-            {i.updates.map((u, n) => (
-              <li key={n}>
-                {isolate(moment(u.at))} · {isolate(u.status)}: {isolate(u.message)}
-              </li>
+        <QueueGrid>
+          {w.cell && (
+            <Queue title={t("Cells")} count={1}>
+              <QueueItem
+                title={isolate(w.cell.cell)}
+                meta={isolate(
+                  [
+                    t(" in {region}", { region: w.cell.region }).trim(),
+                    w.cell.last_backup ? t(" Last backup {value}.", { value: moment(w.cell.last_backup) }).trim() : t(" No backup reported.").trim(),
+                    w.cell.window.from ? t(" Its maintenance window: {value} to {value2}.", { value: moment(w.cell.window.from), value2: moment(w.cell.window.to) }).trim() : "",
+                  ]
+                    .filter(Boolean)
+                    .join(" "),
+                )}
+                trailing={<Badge tone={tone(w.cell.state)}>{isolate(w.cell.state)}</Badge>}
+              />
+            </Queue>
+          )}
+          <Queue title={t("Coming maintenance")} count={w.maintenance.length} empty={t("None planned.")}>
+            {w.maintenance.map((m) => (
+              <QueueItem key={m.release} title={isolate(t("Ferrum {release} comes in the window", { release: m.release }))} meta={isolate(t("{value} to {value2}.", { value: moment(m.from), value2: moment(m.to) }))} />
             ))}
-          </ul>
-        </div>
-      ))}
-      {w.recovery.length > 0 && (
-        <div className="stack">
-          <h4>{t("Recovery requests")}</h4>
-          <ul className="stack">
-            {w.recovery.map((r, n) => (
-              <li key={n}>
-                {t("{kind} asked {value}", { kind: r.kind, value: moment(r.asked_at) })} <Badge tone={tone(r.status)}>{isolate(r.status)}</Badge>
-                {r.note ? ` · ${r.note}` : ""}
-              </li>
+          </Queue>
+          {w.recovery.length > 0 && (
+            <Queue title={t("Recovery requests")} count={w.recovery.length}>
+              {w.recovery.map((r, n) => (
+                <QueueItem key={n} title={isolate(t("{kind} asked {value}", { kind: r.kind, value: moment(r.asked_at) }))} meta={r.note ? isolate(r.note) : undefined} trailing={<Badge tone={tone(r.status)}>{isolate(r.status)}</Badge>} />
+              ))}
+            </Queue>
+          )}
+          <Queue title={t("Cases")} count={w.cases.length}>
+            {w.cases.map((c, n) => (
+              <QueueItem
+                key={n}
+                title={isolate(c.subject)}
+                meta={isolate([c.severity, t("due {value}", { value: moment(c.due_at) }), c.resolution].filter(Boolean).join(" · "))}
+                trailing={<Badge tone={tone(c.status)}>{isolate(c.status)}</Badge>}
+              />
             ))}
-          </ul>
-        </div>
-      )}
-      <div className="stack">
-        <h4>{t("Cases")}</h4>
-        <ul className="stack">
-          {w.cases.map((c, n) => (
-            <li key={n}>
-              {t("{subject} · {severity} · due", { subject: c.subject, severity: c.severity })} {isolate(moment(c.due_at))} <Badge tone={tone(c.status)}>{isolate(c.status)}</Badge>
-              {c.resolution ? ` · ${c.resolution}` : ""}
-            </li>
-          ))}
-        </ul>
-        <form className="stack" onSubmit={(e) => void raise(e)}>
+          </Queue>
+        </QueueGrid>
+        {w.incidents.map((i) => (
+          <IncidentCard key={i.title} i={i} />
+        ))}
+        <form className="form-card grid max-w-2xl gap-4" onSubmit={(e) => void raise(e)}>
+          <h3 className="text-base font-semibold">{t("Raise a case")}</h3>
           <Field label={t("Subject")}>
             <input className="input" required maxLength={300} value={subject} onChange={(e) => setSubject(e.target.value)} />
           </Field>
@@ -125,33 +123,43 @@ function Card({ w, today }: { w: Workspace; today: string }) {
           <Field label={t("What happened")}>
             <textarea className="input" rows={3} value={details} onChange={(e) => setDetails(e.target.value)} />
           </Field>
-          <Button type="submit" variant="primary" loading={busy} disabled={!subject.trim()}>
-            {t("Raise a case")}
-          </Button>
+          <div className="flex justify-end">
+            <Button type="submit" variant="primary" loading={busy} disabled={!subject.trim()}>
+              {t("Raise a case")}
+            </Button>
+          </div>
         </form>
       </div>
-    </section>
+    </HomeSection>
   );
 }
 
 export function ServicePage() {
   useShellTitle(t("Your service"));
   const q = useQuery({ queryKey: ["control", "mine"], queryFn: ({ signal }) => api.get<{ workspaces: Workspace[] }>(`${BASE}/mine`, {}, signal), refetchInterval: 60_000 });
-  if (q.error) return <ErrorState error={q.error} onRetry={() => void q.refetch()} />;
-  if (!q.data) return <ListSkeleton className="np-page" />;
+  const head = <PageHead title={t("Your service")} description={t("How your workspaces are doing, coming maintenance, incidents and your cases.")} />;
+  if (q.error)
+    return (
+      <PageStack>
+        {head}
+        <LoadFailed error={q.error} onRetry={() => void q.refetch()} />
+      </PageStack>
+    );
+  if (!q.data)
+    return (
+      <PageStack>
+        <PageHead title={t("Your service")} />
+        <HomeSkeleton queues={2} />
+      </PageStack>
+    );
   const today = todayIso();
   return (
-    <div className="stack np-page">
-      <div className="page-head">
-        <div>
-          <h1 className="page-title">{t("Your service")}</h1>
-          <p className="page-sub">{t("How your workspaces are doing, coming maintenance, incidents and your cases.")}</p>
-        </div>
-      </div>
+    <PageStack gap="lg">
+      {head}
       {q.data.workspaces.length === 0 && <StatePanel kind="empty" title={t("No workspace names you as its contact")} />}
       {q.data.workspaces.map((w) => (
-        <Card key={w.slug} w={w} today={today} />
+        <WorkspaceSection key={w.slug} w={w} today={today} />
       ))}
-    </div>
+    </PageStack>
   );
 }

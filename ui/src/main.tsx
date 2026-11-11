@@ -7,9 +7,9 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { StrictMode, useEffect } from "react";
 import { createRoot } from "react-dom/client";
-import { createBrowserRouter, Link, Outlet, RouterProvider, useRouteError } from "react-router";
+import { createBrowserRouter, Outlet, RouterProvider, useRouteError } from "react-router";
 import { addCatalogs, bootstrap, isolate, isPublicPage, routeBase, shell, t, wordsReady } from "@ferrum/client";
-import { ConfirmHost, EmptyState, ErrorState, Toaster } from "@ferrum/kit";
+import { ButtonLink, ConfirmHost, StatePanel, Toaster } from "@ferrum/kit";
 import { RequireAuth, setFrameMode } from "@ferrum/records/frame";
 import "./styles.css";
 
@@ -21,14 +21,12 @@ const page = (name: "FormView" | "ListView" | "ReportView" | "AppSettingsPage" |
 const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false, refetchOnWindowFocus: false, staleTime: 5_000 } } });
 
 function RouteError() {
-  return <ErrorState error={useRouteError()} onRetry={() => window.location.reload()} />;
+  return <StatePanel kind="failed" error={useRouteError()} onRetry={() => window.location.reload()} />;
 }
 
 function NotFound({ back = t("Go to the control plane") }: { back?: string }) {
   return (
-    <EmptyState title={t("Page not found")}>
-      <Link to="/">{isolate(back)}</Link>
-    </EmptyState>
+    <StatePanel kind="empty" title={t("Page not found")} action={<ButtonLink to="/">{isolate(back)}</ButtonLink>} />
   );
 }
 
@@ -79,7 +77,7 @@ const staffRoutes = [
     children: [
       // For anyone with the address.
       { path: "status/:tenant", lazy: () => import("./Status").then((m) => ({ Component: m.StatusPage })) },
-      { path: "status/*", element: <EmptyState title={t("Page not found")} icon="server" /> },
+      { path: "status/*", element: <main id="main" className="st-page" tabIndex={-1}><StatePanel kind="empty" title={t("Page not found")} /></main> },
       {
         // For the operators: signed in, in the frame.
         element: <RequireAuth />,
