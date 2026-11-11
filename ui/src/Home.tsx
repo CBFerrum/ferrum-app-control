@@ -18,6 +18,11 @@ const list = (entity: string, filters: unknown[] = [], extra: Record<string, str
 /** The queues show this many rows each; the rest is "and N more", linking to the list. */
 const LIMIT = 5;
 
+/** Whether a rollout needs a person: only one that has halted or failed does; a running one is normal work. */
+export function needsPerson(rollouts: Row[]): boolean {
+  return rollouts.some((r) => r.status === "Halted" || r.status === "Failed");
+}
+
 /** Rows by a field's value, the values in name order. */
 export function groupBy(rows: Row[], field: string): [string, Row[]][] {
   const out = new Map<string, Row[]>();
@@ -100,7 +105,7 @@ export function Home() {
                 <QueueItem key={w.id} to={`/e/HostedWorkspace/${w.id}`} title={isolate(String(w.slug))} meta={parts(w.customer_name, w.health_problems)} trailing={<Badge tone={tone(String(w.health))}>{isolate(String(w.health))}</Badge>} />
               ))}
             </Queue>
-            <Queue title={t("Rollouts")} count={rollouts.data.length} tone={rollouts.data.some((r) => r.status === "Halted") ? "attention" : "default"} empty={t("None running.")} more={{ to: "/e/Rollout", count: rollouts.data.length - LIMIT }}>
+            <Queue title={t("Rollouts")} count={rollouts.data.length} tone={needsPerson(rollouts.data) ? "attention" : "default"} empty={t("None running.")} more={{ to: "/e/Rollout", count: rollouts.data.length - LIMIT }}>
               {rollouts.data.slice(0, LIMIT).map((r) => (
                 <QueueItem
                   key={r.id}
