@@ -7,7 +7,8 @@ import { useQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { useParams } from "react-router";
 import { ApiError, api, bootstrap, t, isolate } from "@ferrum/client";
-import { Badge, EmptyState, ErrorState, ListSkeleton, placed } from "@ferrum/kit";
+import { Badge, HomeSection, HomeSkeleton, LoadFailed, PageHead, PageStack, placed, Queue, QueueGrid, QueueItem, StatePanel } from "@ferrum/kit";
+import { IncidentCard } from "./Incident";
 import { moment, tone } from "./words";
 
 export interface Status {
@@ -43,97 +44,58 @@ export function StatusView({ status, name, json, checked }: { status: Status; na
   const head = overall(status);
   const open = status.incidents.filter((i) => i.status !== "Resolved");
   const past = status.incidents.filter((i) => i.status === "Resolved");
-  const incident = (i: Status["incidents"][number]) => (
-    <article key={`${i.title}-${i.started_at ?? ""}`} className="card card-pad stack" aria-label={i.title}>
-      <header className="row" style={{ justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
-        <h3 className="font-semibold">{isolate(i.title)}</h3>
-        <span className="row" style={{ gap: 6 }}>
-          {i.severity && <Badge tone="neutral">{isolate(i.severity)}</Badge>}
-          <Badge tone={tone(i.status)}>{isolate(i.status)}</Badge>
-        </span>
-      </header>
-      <p className="faint">
-        {t("Since")} {isolate(moment(i.started_at))}
-        {i.resolved_at ? t(", resolved {value}", { value: moment(i.resolved_at) }) : ""}
-        {i.cells.length ? ` · ${i.cells.join(", ")}` : ""}
-      </p>
-      {i.updates.length > 0 && (
-        <ol className="stack" aria-label={t("Updates on {title}, newest first", { title: i.title })}>
-          {i.updates.map((u, n) => (
-            <li key={n}>
-              <span className="faint">{isolate(moment(u.at))}</span> · <strong>{isolate(u.status ?? "")}</strong>
-              {u.message ? `: ${u.message}` : ""}
-            </li>
-          ))}
-        </ol>
-      )}
-    </article>
-  );
+  const incident = (i: Status["incidents"][number]) => <IncidentCard key={`${i.title}-${i.started_at ?? ""}`} i={i} />;
+  const bad = (state: string) => state !== "Operational";
   return (
-    <div className="np-page st-page">
-      <header className="stack">
-        <p className="faint">{isolate(name)}</p>
-        <h1 className="page-title">{t("Service status")}</h1>
-      </header>
-      <main id="main" className="stack" tabIndex={-1}>
-        <section className="card card-pad row" aria-label={t("Now")} style={{ justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
-          <strong className="st-headline">{isolate(head.says)}</strong>
+    <main id="main" className="st-page" tabIndex={-1}>
+      <PageStack>
+        <PageHead eyebrow={isolate(name)} title={t("Service status")} />
+        <section className="card card-pad flex flex-wrap items-center justify-between gap-2" aria-label={t("Now")}>
+          <strong className="text-xl font-semibold">{isolate(head.says)}</strong>
           <Badge tone={tone(head.state)}>{isolate(head.state)}</Badge>
         </section>
 
-        <section className="stack" aria-labelledby="st-incidents">
-          <h2 id="st-incidents" className="st-h">{t("Incidents")}</h2>
-          {open.length ? open.map(incident) : <p className="faint">{t("No open incidents.")}</p>}
-        </section>
+        <HomeSection title={t("Incidents")} count={open.length} empty={t("No open incidents.")}>
+          {open.length > 0 && <div className="grid gap-4">{open.map(incident)}</div>}
+        </HomeSection>
 
-        <section className="stack" aria-labelledby="st-regions">
-          <h2 id="st-regions" className="st-h">{t("Regions")}</h2>
-          <div className="np-columns">
-            {status.regions.map((r) => (
-              <section key={r.region} className="card card-pad stack" aria-labelledby={`st-region-${r.region}`}>
-                <h3 id={`st-region-${r.region}`} className="font-semibold">{r.region || t("Unnamed region")}</h3>
-                <ul className="stack">
+        <HomeSection title={t("Regions")} empty={t("No regions are reported yet")}>
+          {status.regions.length > 0 && (
+            <QueueGrid>
+              {status.regions.map((r) => (
+                <Queue key={r.region} title={r.region || t("Unnamed region")} count={r.cells.length} tone={r.cells.some((c) => bad(c.state) && c.state !== "Unknown") ? "attention" : "default"}>
                   {r.cells.map((c) => (
-                    <li key={c.cell} className="row" style={{ justifyContent: "space-between" }}>
-                      <span>{isolate(c.cell)}</span>
-                      <Badge tone={tone(c.state)}>{isolate(c.state)}</Badge>
-                    </li>
+                    <QueueItem key={c.cell} title={isolate(c.cell)} trailing={<Badge tone={tone(c.state)}>{isolate(c.state)}</Badge>} />
                   ))}
-                </ul>
-              </section>
-            ))}
-          </div>
-        </section>
-
-        <section className="stack" aria-labelledby="st-maintenance">
-          <h2 id="st-maintenance" className="st-h">{t("Coming maintenance")}</h2>
-          {status.maintenance.length ? (
-            <ul className="stack">
-              {status.maintenance.map((m, n) => (
-                <li key={n}>
-                  {m.release ? t("Ferrum {release} on {cell}", { release: m.release, cell: m.cell ?? t("a cell") }) : t("An upgrade on {cell}", { cell: m.cell ?? t("a cell") })}
-                  {m.region ? t(" in {region}", { region: m.region }) : ""}
-                  {m.from ? t(", in its window {value} to {value2}", { value: moment(m.from), value2: moment(m.to) }) : ""}
-                </li>
+                </Queue>
               ))}
-            </ul>
-          ) : (
-            <p className="faint">{t("None planned.")}</p>
+            </QueueGrid>
           )}
-        </section>
+        </HomeSection>
+
+        <QueueGrid columns={1}>
+          <Queue title={t("Coming maintenance")} count={status.maintenance.length} empty={t("None planned.")}>
+            {status.maintenance.map((m, n) => (
+              <QueueItem
+                key={n}
+                title={isolate(m.release ? t("Ferrum {release} on {cell}", { release: m.release, cell: m.cell ?? t("a cell") }) : t("An upgrade on {cell}", { cell: m.cell ?? t("a cell") }))}
+                meta={isolate(`${m.region ? t(" in {region}", { region: m.region }) : ""}${m.from ? t(", in its window {value} to {value2}", { value: moment(m.from), value2: moment(m.to) }) : ""}`.trim())}
+              />
+            ))}
+          </Queue>
+        </QueueGrid>
 
         {past.length > 0 && (
-          <section className="stack" aria-labelledby="st-past">
-            <h2 id="st-past" className="st-h">{t("Resolved in the last three days")}</h2>
-            {past.map(incident)}
-          </section>
+          <HomeSection title={t("Resolved in the last three days")} count={past.length}>
+            <div className="grid gap-4">{past.map(incident)}</div>
+          </HomeSection>
         )}
 
-        <footer className="faint">
+        <footer className="text-xs text-muted-foreground">
           {placed(checked ? t("Read {value}; read again every minute. Programs read the same at {link}.", { value: moment(checked.toISOString()) }) : t("Programs read the same at {link}."), { link: <a href={json}>{isolate(json)}</a> })}
         </footer>
-      </main>
-    </div>
+      </PageStack>
+    </main>
   );
 }
 
@@ -146,9 +108,9 @@ export function StatusPage() {
   }, [name]);
   const q = useQuery({ queryKey: ["control", "status", tenant], queryFn: ({ signal }) => api.get<Status>(json, undefined, signal), refetchInterval: 60_000 });
   if (q.error) {
-    if (q.error instanceof ApiError && q.error.status === 404) return <EmptyState title={t("No status page here")} icon="server" />;
-    return <ErrorState error={q.error} onRetry={() => void q.refetch()} />;
+    if (q.error instanceof ApiError && q.error.status === 404) return <main id="main" className="st-page" tabIndex={-1}><StatePanel kind="empty" title={t("No status page here")} /></main>;
+    return <main id="main" className="st-page" tabIndex={-1}><PageStack><PageHead title={t("Service status")} /><LoadFailed error={q.error} onRetry={() => void q.refetch()} /></PageStack></main>;
   }
-  if (!q.data) return <ListSkeleton className="np-page" />;
+  if (!q.data) return <main id="main" className="st-page" tabIndex={-1}><PageStack><PageHead title={t("Service status")} /><HomeSkeleton queues={2} /></PageStack></main>;
   return <StatusView status={q.data} name={name} json={json} checked={new Date(q.dataUpdatedAt)} />;
 }
