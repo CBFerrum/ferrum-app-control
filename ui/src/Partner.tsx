@@ -113,8 +113,8 @@ export function PartnerPage() {
           </Queue>
         </QueueGrid>
       )}
-      <HomeSection title={tr("Your customers")} count={workspaces.length} empty={tr("No customers yet.")}>
-        {workspaces.length > 0 && (
+      <HomeSection title={tr("Your customers")} count={workspaces.length}>
+        {workspaces.length > 0 ? (
           <div className="card">
             <div className="table-wrap" role="region" aria-label={tr("Your customers")} tabIndex={0}>
               <table className="table">
@@ -151,6 +151,8 @@ export function PartnerPage() {
               </table>
             </div>
           </div>
+        ) : (
+          <StatePanel kind="empty" title={tr("No customers yet.")} />
         )}
       </HomeSection>
       <QueueGrid columns={1}>
