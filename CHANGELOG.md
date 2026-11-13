@@ -2,19 +2,19 @@
 
 ## 0.5.11
 
-Rebuilt with Ferrum-Frontend 45dad7f, the design system as tuned after the landed build was reviewed. The left menu's icons are chosen so that none repeats on more than three rows and each fits its row; their drawings load beside the first page instead of inside it, so the page starts lighter; a row that scrolls sideways fades at the edge where there is more, in every browser and with reduced motion; a printed record leaves out empty fields and keeps its totals with the table; menus and popovers sit inside the page's landmarks for assistive technology; a selection bar folds what does not fit into More on a narrow screen. Nothing else changes.
+Rebuilt with Ferrum-Frontend 9e7190c, the design system as tuned after the landed build was reviewed. The left menu's icons are chosen so that none repeats on more than three rows and each fits its row; their drawings load beside the first page instead of inside it, so the page starts lighter; a row that scrolls sideways fades at the edge where there is more, in every browser and with reduced motion; a printed record leaves out empty fields and keeps its totals with the table; menus and popovers sit inside the page's landmarks for assistive technology; a selection bar folds what does not fit into More on a narrow screen. Nothing else changes.
 
 ## 0.5.10
 
-The interface follows the upgraded design system, rebuilt with Ferrum-Frontend 0a47157. Text uses the kit's type roles (nothing under 12px) and controls its height tokens; loading shows skeletons shaped like what is coming; empty, no matches, denied, offline and failed are told apart; status colours come from stored state ids. The interface check now runs the UI lint against an empty baseline. The home is rebuilt on the kit's work-home pattern: one page title, the main action as a button, queues with their counts, status at its natural width; its other own pages follow the same anatomy.
+The interface follows the upgraded design system, rebuilt with Ferrum-Frontend 76c4fad. Text uses the kit's type roles (nothing under 12px) and controls its height tokens; loading shows skeletons shaped like what is coming; empty, no matches, denied, offline and failed are told apart; status colours come from stored state ids. The interface check now runs the UI lint against an empty baseline. The home is rebuilt on the kit's work-home pattern: one page title, the main action as a button, queues with their counts, status at its natural width; its other own pages follow the same anatomy.
 
 ## 0.5.9
 
-Rebuilt with Ferrum-Frontend c59c9a2: the names of its models, fields and manifest in Arabic and Hindi (265 each in ui/src/locales/names, which the platform serves to every page of the workspace, so a record's labels, the launcher and the bar read in the person's language), and the sentences its pages still showed in English (split around a link or a figure, built in code from a template or word by word) whole and translated (104 words each in ui/src/locales). Translated by the model, to be reviewed by native speakers.
+Rebuilt with Ferrum-Frontend 43d7779: the names of its models, fields and manifest in Arabic and Hindi (265 each in ui/src/locales/names, which the platform serves to every page of the workspace, so a record's labels, the launcher and the bar read in the person's language), and the sentences its pages still showed in English (split around a link or a figure, built in code from a template or word by word) whole and translated (104 words each in ui/src/locales). Translated by the model, to be reviewed by native speakers.
 
 ## 0.5.8
 
-Rebuilt with Ferrum-Frontend 155518c: the sentences its pages built in code (counts, dates, what a toast or a screen reader says) go through t() too, as whole sentences where code chose a word, and carry built-in Arabic and Hindi (95 words each in ui/src/locales, translated by the model and to be reviewed by native speakers).
+Rebuilt with Ferrum-Frontend 046a3a2: the sentences its pages built in code (counts, dates, what a toast or a screen reader says) go through t() too, as whole sentences where code chose a word, and carry built-in Arabic and Hindi (95 words each in ui/src/locales, translated by the model and to be reviewed by native speakers).
 
 ## 0.5.7
 
@@ -22,23 +22,23 @@ The assistant knows what its records mean in its pages (contributes.shell.assist
 
 ## 0.5.6
 
-Rebuilt with Ferrum-Frontend 5b22e7b: its own words carry built-in Arabic and Hindi (89 words each, ui/src/locales, translated by the model and to be reviewed by native speakers), fetched for the page's language only. The labels it keeps in objects, its dialogs, its page titles and the words it keeps in variables go through t() as well, and the names and sizes it shows as they are keep their order right to left. Its pages are drawn once their words are in, and its entry carries only the parts of the kit it uses.
+Rebuilt with Ferrum-Frontend 389b2af: its own words carry built-in Arabic and Hindi (89 words each, ui/src/locales, translated by the model and to be reviewed by native speakers), fetched for the page's language only. The labels it keeps in objects, its dialogs, its page titles and the words it keeps in variables go through t() as well, and the names and sizes it shows as they are keep their order right to left. Its pages are drawn once their words are in, and its entry carries only the parts of the kit it uses.
 
 ## 0.5.5
 
-Rebuilt with Ferrum-Frontend 6537d65: an action's link, code or token shown once is kept in a dialog to copy, and on a page that reads right to left, English left untranslated keeps its own order. Its own words go through the kit's t() (84 places), so a workspace's own words for its language reach them, and Admin, Interface words lists them under it (dist/words.json).
+Rebuilt with Ferrum-Frontend 1f5981d: an action's link, code or token shown once is kept in a dialog to copy, and on a page that reads right to left, English left untranslated keeps its own order. Its own words go through the kit's t() (84 places), so a workspace's own words for its language reach them, and Admin, Interface words lists them under it (dist/words.json).
 
 ## 0.5.4
 
-Rebuilt with Ferrum-Frontend d5d98f2: a workspace's own words for its interface (Admin, Interface words) reach its pages as they load; an attachment field that holds a picture shows it; and a value another record already has is said so, where the form said the record had been changed by someone else.
+Rebuilt with Ferrum-Frontend 8a1c2e7: a workspace's own words for its interface (Admin, Interface words) reach its pages as they load; an attachment field that holds a picture shows it; and a value another record already has is said so, where the form said the record had been changed by someone else.
 
 ## 0.5.3
 
-Rebuilt with Ferrum-Frontend 63280d3: right to left, its pages mirror as they read (icons that point along the line, margins and alignment by the line's start and end, arrow keys along it), and the records pages' words are in Arabic and Hindi.
+Rebuilt with Ferrum-Frontend 9d80f4f: right to left, its pages mirror as they read (icons that point along the line, margins and alignment by the line's start and end, arrow keys along it), and the records pages' words are in Arabic and Hindi.
 
 ## 0.5.2
 
-Rebuilt with Ferrum-Frontend a64416a: a new record's box whose default is 1 shows ticked, as it is saved. An action's dialog says every refusal, the errors on what the action made (another record's rows) among them, and an action with parameters and a confirmation asks once.
+Rebuilt with Ferrum-Frontend 204b713: a new record's box whose default is 1 shows ticked, as it is saved. An action's dialog says every refusal, the errors on what the action made (another record's rows) among them, and an action with parameters and a confirmation asks once.
 
 ## 0.5.1
 
@@ -56,7 +56,7 @@ reads as before.
 
 ## 0.4.1
 
-Rebuilt with Ferrum-Frontend a76295e: its pages show times on a person's own clock when they chose one on their Account page, while today and due dates stay on the workspace's day. Its pages count today on the workspace's day, not UTC's, so the day's figures are right in the evening west of Greenwich and the early morning east of it.
+Rebuilt with Ferrum-Frontend b39fffb: its pages show times on a person's own clock when they chose one on their Account page, while today and due dates stay on the workspace's day. Its pages count today on the workspace's day, not UTC's, so the day's figures are right in the evening west of Greenwich and the early morning east of it.
 
 ## 0.4.0
 
@@ -75,7 +75,7 @@ Usage charged beyond a workspace's terms (FERRUM-CLOUD-003).
 
 ## 0.3.1
 
-Rebuilt with Ferrum-Frontend 24c3951: its pages show times on the workspace's clock, naming the zone when it is not the browser's, a draft numbered on submit is headed as a draft, and a record of an app that is not installed says so.
+Rebuilt with Ferrum-Frontend d350579: its pages show times on the workspace's clock, naming the zone when it is not the browser's, a draft numbered on submit is headed as a draft, and a record of an app that is not installed says so.
 
 ## 0.3.0
 
@@ -98,7 +98,7 @@ Hosting invoiced through ERP (FERRUM-CLOUD-003).
 
 ## 0.2.1
 
-Rebuilt with Ferrum-Frontend bb60115: a record page reads an empty number or check as the server does, so an action whose condition needs one shows, and a workspace's settings open as their one record.
+Rebuilt with Ferrum-Frontend 20d08e5: a record page reads an empty number or check as the server does, so an action whose condition needs one shows, and a workspace's settings open as their one record.
 
 ## 0.2.0
 
@@ -119,11 +119,11 @@ Workspaces made on their cell (FERRUM-CLOUD-001, FERRUM-PARTNER-001).
 
 ## 0.1.7
 
-The public status page: anyone opens `/control/status/{workspace}` without signing in (`shell.public`) and reads each region's cells and their state, the incidents told publicly with their updates, newest first, coming maintenance in each cell's window, and what was resolved in the last three days, read again every minute. Its headline is the worst state of any cell, or says how many incidents are open. It draws what `/api/site/{workspace}/control/status` answers, which names no customer, and points programs there. Built with Ferrum-Frontend 01b8ff0 (FERRUM-CLOUD-004).
+The public status page: anyone opens `/control/status/{workspace}` without signing in (`shell.public`) and reads each region's cells and their state, the incidents told publicly with their updates, newest first, coming maintenance in each cell's window, and what was resolved in the last three days, read again every minute. Its headline is the worst state of any cell, or says how many incidents are open. It draws what `/api/site/{workspace}/control/status` answers, which names no customer, and points programs there. Built with Ferrum-Frontend 2c4c398 (FERRUM-CLOUD-004).
 
 ## 0.1.6
 
-Rebuilt with Ferrum-Frontend 00dea07: in a workflow state that names what may change, the other fields show read-only, and the fields the state needs show required.
+Rebuilt with Ferrum-Frontend ae13c69: in a workflow state that names what may change, the other fields show read-only, and the fields the state needs show required.
 
 ## 0.1.5
 
@@ -141,11 +141,11 @@ From the browser walk of a recovery request and a partner's statement.
   has), not "Support access ends not given", on the customer's and the partner's pages.
 - A second statement for a month is refused as "Northwind Partners already has its statement for
   October 2026", not with a possessive that read "Partners's".
-- Rebuilt with Ferrum-Frontend 16b5c57.
+- Rebuilt with Ferrum-Frontend 355dfca.
 
 ## 0.1.2
 
-Rebuilt with Ferrum-Frontend 80ff179: a field's label names its control for assistive technology, and a record whose title is a link shows that record's title, not its id.
+Rebuilt with Ferrum-Frontend 89b7cc7: a field's label names its control for assistive technology, and a record whose title is a link shows that record's title, not its id.
 
 ## 0.1.1
 
