@@ -77,6 +77,16 @@ fn refused<V: std::fmt::Debug>(r: Result<V, Error>, kind: &str, says: &str) {
     assert!(ok && msg.contains(says), "expected {kind} saying {says:?}, got {msg}");
 }
 
+/// What opens the test's vault: the database password of `url`, with Argon2id kept cheap for tests.
+fn opener(url: &str) -> ferrum_kernel::vault::Opener {
+    ferrum_kernel::vault::Opener {
+        database_url: url.to_string(),
+        file: "/nonexistent/root.key".into(),
+        kdf: ferrum_kernel::vault::Kdf { m_kib: 64, t: 1, p: 1 },
+        ..Default::default()
+    }
+}
+
 #[test]
 fn hosting_invoiced() {
     let rt = tokio::runtime::Builder::new_multi_thread().enable_all().thread_stack_size(16 << 20).build().unwrap();
@@ -86,8 +96,9 @@ fn hosting_invoiced() {
 async fn scenario() {
     let url =
         std::env::var("FERRUM_CONTROL_ERP_TEST_DATABASE_URL").unwrap_or_else(|_| "postgres://ferrum:ferrum@localhost:5432/ferrum_control_erp_test".into());
-    let db = Db::connect(DbConfig { url, max_connections: 16, ..Default::default() }).await.expect("connect");
-    sqlx::raw_sql("drop schema if exists public cascade; create schema public;").execute(&db.pool).await.expect("reset");
+    let db = Db::connect(DbConfig { url: url.clone(), max_connections: 16, ..Default::default() }).await.expect("connect");
+    sqlx::raw_sql("drop schema if exists vault cascade; drop schema if exists public cascade; create schema public;").execute(&db.pool).await.expect("reset");
+    ferrum_kernel::vault::open(&db, opener(&url), false).await.expect("the vault");
     let mut packages = ferrum_domain::packages().expect("platform packages");
     packages.extend(ferrum_app_erp::packages().expect("ERP's packages"));
     packages.extend(ferrum_app_control::packages().expect("app packages"));
@@ -95,8 +106,13 @@ async fn scenario() {
     assert_eq!(catalog.links_out_of_reach(ferrum_app_control::CONNECTOR_PACKAGE), Vec::<String>::new(), "whoever links a record can look it up");
     let mut hooks = HookRegistry::default();
     ferrum_domain::register(&mut hooks);
-    ferrum_app_erp::register(&mut hooks);
-    ferrum_app_control::register(&mut hooks);
+    // As the server registers them: each as itself, owning its packages.
+    let erp: Vec<String> = ferrum_app_erp::packages().unwrap().iter().map(|p| p.name().to_string()).collect();
+    hooks.app("erp", &[], ferrum_app_erp::register);
+    hooks.own("erp", &erp);
+    let own: Vec<String> = ferrum_app_control::packages().unwrap().iter().map(|p| p.name().to_string()).collect();
+    hooks.app("control", &own, ferrum_app_control::register);
+    hooks.own("control", &own);
     let settings = KernelSettings { secret_key: Some(SecretKey::new([7u8; 32])), ..Default::default() };
     let k = Kernel::boot(db, catalog, hooks, settings, None).await.expect("boot");
     ferrum_domain::maintenance(&k).await.expect("partitions");

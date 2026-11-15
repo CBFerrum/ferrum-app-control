@@ -67,7 +67,7 @@ async fn report(k: &Kernel, req: &SiteRequest) -> Result<SiteResponse> {
     let mut tx = k.db.tenant_tx(req.tenant).await?;
     let cell = k.find_tx(&ctx, &mut tx, "Cell", &[Filter::eq("cell_name", name)], None, 1).await?.first().and_then(|c| id(c, "id"));
     let held = match cell {
-        Some(c) => k.secret(&mut tx, req.tenant, "Cell", c, "report_token").await?,
+        Some(c) => crate::keys::field(k, &mut tx, req.tenant, "Cell", c, "report_token").await?,
         None => None,
     };
     // An unknown cell and a wrong token are refused alike.

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.5.12
+
+The Control Plane reads its secret fields (a cell's report and bootstrap tokens, a workspace's support key) with its own handle on the platform's vault, in the same transaction as before, instead of through the platform's reader that any app could use, which is deprecated. It registers as itself (`hooks.app("control", …)`) to be given that handle, and needs a platform with the vault's field reader (0.3.8 on the platform's main from cdec881). People see nothing new: the same pages, the same answers, the same refusals. While the vault is closed these reads refuse and say so.
+
 ## 0.5.11
 
 Rebuilt with Ferrum-Frontend 9e7190c, the design system as tuned after the landed build was reviewed. The left menu's icons are chosen so that none repeats on more than three rows and each fits its row; their drawings load beside the first page instead of inside it, so the page starts lighter; a row that scrolls sideways fades at the edge where there is more, in every browser and with reduced motion; a printed record leaves out empty fields and keeps its totals with the table; menus and popovers sit inside the page's landmarks for assistive technology; a selection bar folds what does not fit into More on a narrow screen. Nothing else changes.
