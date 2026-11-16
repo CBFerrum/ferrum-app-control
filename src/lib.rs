@@ -20,6 +20,7 @@
 mod billing;
 mod fleet;
 mod hosting;
+mod keys;
 mod partners;
 mod site;
 
@@ -41,8 +42,11 @@ pub fn packages() -> std::result::Result<Vec<ferrum_meta::Package>, ferrum_meta:
     ferrum_meta::catalog::load_embedded(EMBEDDED)
 }
 
-/// Registers this app's document hooks, and its endpoints.
+/// Registers this app's document hooks, and its endpoints. Call it inside the platform's registration of the app,
+/// `hooks.app("control", …)`: it takes its own vault handle there, which reads its secret fields (`keys.rs`).
 pub fn register(hooks: &mut HookRegistry) {
+    let site: Arc<dyn ferrum_kernel::Site> = Arc::new(site::ControlSite);
+    keys::remember(&site, hooks.vault());
     hooks
         .register("Release", Arc::new(fleet::ReleaseHook))
         .register("Cell", Arc::new(fleet::CellHook))
@@ -56,7 +60,7 @@ pub fn register(hooks: &mut HookRegistry) {
     hooks.scoped(&[CONNECTOR_PACKAGE.to_string()], |h| {
         h.register("HostedWorkspace", Arc::new(billing::BillingHook));
     });
-    hooks.add_site("control", Arc::new(site::ControlSite));
+    hooks.add_site("control", site);
 }
 
 /// The connector with ERP's package.

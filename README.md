@@ -62,7 +62,7 @@ The fleet home, rollout waves, incident updates and the public status page are n
 ### 🛰️ Cells and their health
 
 - **Cell.** A deployment of Ferrum in one region. It holds its name, region, kind (Shared or Dedicated), capacity, how many workspaces are placed, its API address, the release and configuration fingerprint it should run, and a weekly maintenance window (day, start hour, length in hours).
-- **Readings from its own tooling.** A cell's tooling posts version, digest, configuration fingerprint, last backup, certificate expiry, and processor, memory and disk use. The cell's token is set on its record and kept sealed. A cell reports at most twice a minute.
+- **Readings from its own tooling.** A cell's tooling posts version, digest, configuration fingerprint, last backup, certificate expiry, and processor, memory and disk use. The cell's token is set on its record and kept sealed in the platform's vault, where only the Control Plane reads it. A cell reports at most twice a minute.
 - **Down.** A cell is down when it has not reported for 15 minutes or its certificate has expired.
 - **Degraded.** A cell is degraded when it runs another release than it should, its configuration has drifted, its last backup is more than 26 hours old, its certificate ends within 14 days, or a resource is at 90%.
 - **Fleet home.** Cells grouped by region with a placed-of-capacity bar, plus queues for open incidents, workspaces that are not healthy, and rollouts that are running or halted. The page refreshes the cell list every minute.

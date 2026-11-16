@@ -146,7 +146,9 @@ pub(crate) async fn provision(k: &Kernel, ctx: &Ctx, tx: &mut Tx, workspace: &Do
     let cell = k.get_tx(ctx, tx, "Cell", cell_id, false).await?;
     let name = s(&cell, "cell_name").unwrap_or_default().to_string();
     let api = s(&cell, "api_address").filter(|a| good_address(a)).ok_or_else(|| Error::invalid(format!("{name} has no API address to make workspaces at")))?;
-    let token = k.secret(tx, ctx.tenant, "Cell", cell_id, "provision_token").await?.ok_or_else(|| Error::invalid(format!("{name} has no bootstrap token")))?;
+    let token = crate::keys::field(k, tx, ctx.tenant, "Cell", cell_id, "provision_token")
+        .await?
+        .ok_or_else(|| Error::invalid(format!("{name} has no bootstrap token")))?;
     let (packages, settings) = match id(workspace, "template") {
         Some(t) => {
             let template = k.get_tx(ctx, tx, "SetupTemplate", t, false).await?;
@@ -160,7 +162,7 @@ pub(crate) async fn provision(k: &Kernel, ctx: &Ctx, tx: &mut Tx, workspace: &Do
     let (client, url) = k.vetted_client(&url, k.settings.webhooks_allow_private, Duration::from_secs(30), "Ferrum control plane").await?;
     let answer = client
         .post(url)
-        .header("x-ferrum-bootstrap-token", token)
+        .header("x-ferrum-bootstrap-token", token.as_str())
         .json(&body)
         .send()
         .await
@@ -187,7 +189,7 @@ pub(crate) async fn read_health(k: &Kernel, ctx: &Ctx, now: DateTime<Utc>) -> Re
     let mut asks = Vec::new();
     for w in k.find_tx(ctx, &mut tx, "HostedWorkspace", &[], None, 10_000).await? {
         let Some(me) = id(&w, "id").filter(|_| s(&w, "status") != Some("Closed")) else { continue };
-        let key = k.secret(&mut tx, ctx.tenant, "HostedWorkspace", me, "health_key").await?;
+        let key = crate::keys::field(k, &mut tx, ctx.tenant, "HostedWorkspace", me, "health_key").await?;
         asks.push((me, s(&w, "address").unwrap_or_default().to_string(), key));
     }
     tx.commit().await?;

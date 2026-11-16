@@ -24,6 +24,16 @@ fn obj(v: Value) -> Doc {
     v.as_object().cloned().unwrap()
 }
 
+/// What opens the test's vault: the database password of `url`, with Argon2id kept cheap for tests.
+fn opener(url: &str) -> ferrum_kernel::vault::Opener {
+    ferrum_kernel::vault::Opener {
+        database_url: url.to_string(),
+        file: "/nonexistent/root.key".into(),
+        kdf: ferrum_kernel::vault::Kdf { m_kib: 64, t: 1, p: 1 },
+        ..Default::default()
+    }
+}
+
 fn uid(v: &Value) -> Uuid {
     v.as_str().unwrap_or_else(|| panic!("not an id: {v}")).parse().unwrap()
 }
@@ -220,15 +230,20 @@ fn a_control_plane() {
 
 async fn scenario() {
     let url = std::env::var("FERRUM_CONTROL_TEST_DATABASE_URL").unwrap_or_else(|_| "postgres://ferrum:ferrum@localhost:5432/ferrum_control_test".into());
-    let db = Db::connect(DbConfig { url, max_connections: 16, ..Default::default() }).await.expect("connect");
-    sqlx::raw_sql("drop schema if exists public cascade; create schema public;").execute(&db.pool).await.expect("reset");
+    let db = Db::connect(DbConfig { url: url.clone(), max_connections: 16, ..Default::default() }).await.expect("connect");
+    sqlx::raw_sql("drop schema if exists vault cascade; drop schema if exists public cascade; create schema public;").execute(&db.pool).await.expect("reset");
+    // The vault, opened as a server opens it (its credential slot, from the address's password), once migrated.
+    ferrum_kernel::vault::open(&db, opener(&url), false).await.expect("the vault");
     let mut packages = ferrum_domain::packages().expect("platform packages");
     // The Control Plane alone: its connector with ERP needs ERP's packages (tests/billing_it.rs).
     packages.extend(ferrum_app_control::packages().expect("app packages").into_iter().filter(|p| p.name() != ferrum_app_control::CONNECTOR_PACKAGE));
     let catalog = Catalog::from_packages(packages).expect("catalog");
     let mut hooks = HookRegistry::default();
     ferrum_domain::register(&mut hooks);
-    ferrum_app_control::register(&mut hooks);
+    // As the server registers it: as itself, owning its packages, so that it reads its secret fields with its own handle.
+    let own: Vec<String> = ferrum_app_control::packages().unwrap().iter().map(|p| p.name().to_string()).collect();
+    hooks.app("control", &own, ferrum_app_control::register);
+    hooks.own("control", &own);
     // The cells answer on this machine in the test.
     let settings = KernelSettings { secret_key: Some(SecretKey::new([7u8; 32])), webhooks_allow_private: true, ..Default::default() };
     let k = Kernel::boot(db, catalog, hooks, settings, None).await.expect("boot");
@@ -773,4 +788,10 @@ async fn scenario() {
     refused(t.k.insert(&rm1, "Cell", obj(cell("ap-1", "ap", 1, "Sunday", 2, "x"))).await, "forbidden", "");
     refused(t.k.list(&contact, "HostedWorkspace", &ListQuery::default()).await, "forbidden", "");
     refused(t.k.list(&pat, "RevenueStatement", &ListQuery::default()).await, "forbidden", "");
+
+    // Every secret field it read (a cell's tokens, a workspace's support key) it read with its own handle: none past the
+    // vault, which the platform notes (`ferrum task legacy_key`) in the background.
+    tokio::time::sleep(std::time::Duration::from_millis(500)).await;
+    let past: Vec<_> = k.legacy_key(vec![]).await.unwrap().uses.into_iter().filter(|u| u.0.starts_with("reader:")).map(|u| u.1).collect();
+    assert!(past.is_empty(), "read past the vault: {past:?}");
 }
