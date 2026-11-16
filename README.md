@@ -7,7 +7,7 @@
 
 <br>
 
-[![Version](https://img.shields.io/badge/version-0.5.11-334155?style=flat-square)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.6.1-334155?style=flat-square)](CHANGELOG.md)
 [![Licence: AGPL-3.0](https://img.shields.io/badge/licence-AGPL--3.0-blue?style=flat-square)](LICENSE)
 [![Ferrum platform](https://img.shields.io/badge/runs%20on-Ferrum-2f5bea?style=flat-square)](https://github.com/CBFerrum/Ferrum)
 ![Rust](https://img.shields.io/badge/Rust-server-b7410e?style=flat-square&logo=rust)
@@ -270,6 +270,7 @@ Notes: Rancher's rollouts are GitOps targeting through Fleet, not release waves 
 
 ### ✅ Recently shipped
 
+- [x] **0.6.1** Rebuilt on Ferrum-Frontend 06bd1a2: its pages start through `mountApp`; no routes to the screens apps no longer have.
 - [x] **0.5.11** The interface rebuilt on the tuned design system: better menu icons, a lighter first page, a visible scroll cue, cleaner print.
 - [x] **0.5.10** The redesigned interface: upgraded design system, shaped loading, told-apart states, a work home with queues.
 - [x] **0.5.9** Names in Arabic and Hindi; the last English sentences translated.
