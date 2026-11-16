@@ -289,7 +289,6 @@ Notes: Rancher's rollouts are GitOps targeting through Fleet, not release waves 
 ### 🔭 Later
 
 - [ ] Partner certification by exams or trained staff.
-- [ ] Apps' own health on older servers: it shows only once a workspace's server reports `apps`.
 - [ ] Reports and print formats of its own.
 - [ ] Charge usage prorated within a month (today it is the month's peak).
 

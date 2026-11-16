@@ -244,36 +244,38 @@ async fn ask(k: &Kernel, address: &str, key: &str) -> (&'static str, Vec<String>
         401 | 403 => return unreachable("its support key was refused: the access has ended or was revoked".into()),
         code => return unreachable(format!("it answered {code}")),
     }
-    let Ok(report) = answer.json::<Value>().await else { return unreachable("its report could not be read".into()) };
-    let problems = problems_of(&report);
-    let version = report.get("version").and_then(Value::as_str).map(str::to_string);
-    (if problems.is_empty() { "Healthy" } else { "Degraded" }, problems, version, usage(&report))
+    let report = answer.json::<Value>().await.ok();
+    let read = report.as_ref().and_then(|r| Some((problems_of(r)?, r.get("version")?.as_str()?.to_string(), usage(r)?)));
+    let Some((problems, version, used)) = read else { return unreachable("its report could not be read".into()) };
+    (if problems.is_empty() { "Healthy" } else { "Degraded" }, problems, Some(version), Some(used))
 }
 
-/// What a health report says is wrong: events not delivered, jobs failed, a long queue, and what
-/// each installed app says of its own part (`apps`, IoT Edge's gateways among them), named by its
-/// package.
-pub(crate) fn problems_of(report: &Value) -> Vec<String> {
-    let n = |p: &str| report.pointer(p).and_then(Value::as_i64).unwrap_or(0);
+/// What a health report (the platform's `Kernel::support_report`) says is wrong: events not
+/// delivered, jobs failed, a long queue, and what each installed app says of its own part (`apps`,
+/// IoT Edge's gateways among them), named by its package. None when it is not such a report.
+pub(crate) fn problems_of(report: &Value) -> Option<Vec<String>> {
+    let n = |p: &str| report.pointer(p).and_then(Value::as_i64);
+    let (dead, failed, pending) = (n("/events/dead")?, n("/jobs/failed")?, n("/events/pending")?);
     let mut problems = Vec::new();
-    if n("/events/dead") > 0 {
-        problems.push(format!("{} events could not be delivered", n("/events/dead")));
+    if dead > 0 {
+        problems.push(format!("{dead} events could not be delivered"));
     }
-    if n("/jobs/failed") > 0 {
-        problems.push(format!("{} jobs failed", n("/jobs/failed")));
+    if failed > 0 {
+        problems.push(format!("{failed} jobs failed"));
     }
-    if n("/events/pending") > 1000 {
-        problems.push(format!("{} events are waiting", n("/events/pending")));
+    if pending > 1000 {
+        problems.push(format!("{pending} events are waiting"));
     }
-    for (app, health) in report.get("apps").and_then(Value::as_object).into_iter().flatten() {
-        let said = health.get("problems").and_then(Value::as_array).into_iter().flatten().filter_map(Value::as_str);
-        problems.extend(said.map(|p| format!("{app}: {p}")));
+    for (app, health) in report.get("apps")?.as_object()? {
+        for p in health.get("problems")?.as_array()? {
+            problems.push(format!("{app}: {}", p.as_str()?));
+        }
     }
-    problems
+    Some(problems)
 }
 
-/// What a health report says the workspace uses: (active people, bytes its files take), when it
-/// says.
+/// What a health report says the workspace uses: (active people, bytes its files take). None when
+/// it is not such a report.
 pub(crate) fn usage(report: &Value) -> Option<(i64, i64)> {
     let u = report.get("usage")?;
     Some((u.get("people")?.as_i64()?.max(0), u.get("storage_bytes")?.as_i64()?.max(0)))
@@ -395,16 +397,18 @@ mod tests {
 
     #[test]
     fn problems_from_a_health_report() {
-        let report = json!({"events": {"dead": 2, "pending": 3}, "jobs": {"failed": 0},
-                            "apps": {"edge": {"gateways": 5, "silent": 1, "problems": ["1 of 5 gateways not heard from for 15 minutes", 7]}, "erp": {"problems": []}}});
-        assert_eq!(problems_of(&report), ["2 events could not be delivered", "edge: 1 of 5 gateways not heard from for 15 minutes"]);
-        assert!(problems_of(&json!({"version": "0.4.0", "events": {"pending": 1001}})).iter().eq(["1001 events are waiting"]), "an older server's report");
+        let report = json!({"events": {"dead": 2, "pending": 1001}, "jobs": {"active": 1, "failed": 0},
+                            "apps": {"edge": {"gateways": 5, "silent": 1, "problems": ["1 of 5 gateways not heard from for 15 minutes"]}, "erp": {"problems": []}}});
+        assert_eq!(
+            problems_of(&report).unwrap(),
+            ["2 events could not be delivered", "1001 events are waiting", "edge: 1 of 5 gateways not heard from for 15 minutes"]
+        );
+        assert_eq!(problems_of(&json!({"events": {"dead": 0, "pending": 1001}})), None, "not the platform's report: not read");
     }
 
     #[test]
     fn usage_from_a_health_report() {
         assert_eq!(usage(&json!({"usage": {"people": 12, "storage_bytes": 2_500_000_000i64}})), Some((12, 2_500_000_000)));
-        assert_eq!(usage(&json!({"version": "0.4.0"})), None, "an older server says nothing of it");
         assert_eq!(usage(&json!({"usage": {"people": "12"}})), None);
         assert_eq!(gigabytes(2_500_000_000), rust_decimal::Decimal::new(25, 1));
         assert_eq!(gigabytes(1), rust_decimal::Decimal::ZERO);

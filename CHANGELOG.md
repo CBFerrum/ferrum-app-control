@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.6.0
+
+A workspace's health is read only as the platform's support report gives it (`Kernel::support_report`): its `version`, its events and jobs, its `usage` and each installed app's `problems`. A report without them was read as one with nothing wrong and no usage, for servers from before the report carried `usage` and `apps`, which no installation runs; such a report now leaves the workspace Unreachable, "its report could not be read", as a body that is not JSON does. No database or interface change.
+
 ## 0.5.12
 
 The Control Plane reads its secret fields (a cell's report and bootstrap tokens, a workspace's support key) with its own handle on the platform's vault, in the same transaction as before, instead of through the platform's reader that any app could use, which is deprecated. It registers as itself (`hooks.app("control", …)`) to be given that handle, and needs a platform with the vault's field reader (0.3.8 on the platform's main from cdec881). People see nothing new: the same pages, the same answers, the same refusals. While the vault is closed these reads refuse and say so.
