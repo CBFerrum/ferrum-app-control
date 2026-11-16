@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.6.1
+
+Needs the same platform as 0.6.0. No database change. Interface only, `ui/dist` rebuilt with Ferrum-Frontend `06bd1a2`.
+
+- The two routes to the screens apps no longer have (`apps/:app/settings`, `x/:app/:page`) are gone.
+- The page starts through the frontend's `mountApp`, which keeps lists fresh for 30 seconds (Control Plane said 5); the
+  interface lint has no baseline file any more.
+
 ## 0.6.0
 
 A workspace's health is read only as the platform's support report gives it (`Kernel::support_report`): its `version`, its events and jobs, its `usage` and each installed app's `problems`. A report without them was read as one with nothing wrong and no usage, for servers from before the report carried `usage` and `apps`, which no installation runs; such a report now leaves the workspace Unreachable, "its report could not be read", as a body that is not JSON does. No database or interface change.
