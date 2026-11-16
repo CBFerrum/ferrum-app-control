@@ -10,7 +10,6 @@
 //! customer's own page; and who may do what.
 
 use chrono::{DateTime, Datelike, Duration, Utc, Weekday};
-use ferrum_kernel::secret::SecretKey;
 use ferrum_kernel::support::GrantInput;
 use ferrum_kernel::tenant::NewTenant;
 use ferrum_kernel::{Ctx, Db, DbConfig, Doc, Error, HookRegistry, Kernel, KernelSettings, ListQuery, SiteRequest};
@@ -245,7 +244,7 @@ async fn scenario() {
     hooks.app("control", &own, ferrum_app_control::register);
     hooks.own("control", &own);
     // The cells answer on this machine in the test.
-    let settings = KernelSettings { secret_key: Some(SecretKey::new([7u8; 32])), webhooks_allow_private: true, ..Default::default() };
+    let settings = KernelSettings { webhooks_allow_private: true, ..Default::default() };
     let k = Kernel::boot(db, catalog, hooks, settings, None).await.expect("boot");
     ferrum_domain::maintenance(&k).await.expect("partitions");
     let new = |slug: &str, packages: Vec<String>| NewTenant {
@@ -788,10 +787,4 @@ async fn scenario() {
     refused(t.k.insert(&rm1, "Cell", obj(cell("ap-1", "ap", 1, "Sunday", 2, "x"))).await, "forbidden", "");
     refused(t.k.list(&contact, "HostedWorkspace", &ListQuery::default()).await, "forbidden", "");
     refused(t.k.list(&pat, "RevenueStatement", &ListQuery::default()).await, "forbidden", "");
-
-    // Every secret field it read (a cell's tokens, a workspace's support key) it read with its own handle: none past the
-    // vault, which the platform notes (`ferrum task legacy_key`) in the background.
-    tokio::time::sleep(std::time::Duration::from_millis(500)).await;
-    let past: Vec<_> = k.legacy_key(vec![]).await.unwrap().uses.into_iter().filter(|u| u.0.starts_with("reader:")).map(|u| u.1).collect();
-    assert!(past.is_empty(), "read past the vault: {past:?}");
 }

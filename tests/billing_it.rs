@@ -8,7 +8,6 @@
 //! was invoiced.
 
 use chrono::{DateTime, Timelike, Utc};
-use ferrum_kernel::secret::SecretKey;
 use ferrum_kernel::tenant::NewTenant;
 use ferrum_kernel::{Ctx, Db, DbConfig, Doc, Error, HookRegistry, Kernel, KernelSettings, ListQuery};
 use ferrum_meta::Catalog;
@@ -113,8 +112,7 @@ async fn scenario() {
     let own: Vec<String> = ferrum_app_control::packages().unwrap().iter().map(|p| p.name().to_string()).collect();
     hooks.app("control", &own, ferrum_app_control::register);
     hooks.own("control", &own);
-    let settings = KernelSettings { secret_key: Some(SecretKey::new([7u8; 32])), ..Default::default() };
-    let k = Kernel::boot(db, catalog, hooks, settings, None).await.expect("boot");
+    let k = Kernel::boot(db, catalog, hooks, KernelSettings::default(), None).await.expect("boot");
     ferrum_domain::maintenance(&k).await.expect("partitions");
     ferrum_app_erp::maintenance(&k).await.expect("partitions");
     // A day of its own, never UTC's: behind it early in UTC's day, ahead of it later.
