@@ -19,6 +19,9 @@
 
 Control Plane is the operations room for a hosted Ferrum service. It tracks the cells that run customers' workspaces, the releases they should run, the incidents that touch them, and the partners who bring customers. It replaces a spreadsheet of deployments, a hand-run upgrade checklist, a separate status page and a hosting-billing script.
 
+> [!IMPORTANT]
+> **Staged rollouts do not work end to end.** A cell's health, and every step of a rollout after its first, come from reports that a cell's own tooling posts to `POST /api/site/{workspace}/control/report`. Nothing in the Ferrum repositories sends that report, and nothing upgrades a cell: a wave only sets the cell's desired release, then waits for a report that says the cell runs it and is healthy. The tests and a hand-made request are the only senders so far, so rollouts, cell health and halting have been tried against posted reports only, never against a real cell. A cell that has never reported is *Unknown*.
+
 [💡 Why](#-why-control-plane) · [📸 Screenshots](#-screenshots) · [✨ Features](#-features) · [📊 Compare](#-how-it-compares) · [📍 Roadmap](#-roadmap) · [🚀 Install](#-install) · [🔧 Develop](#-develop)
 
 </div>
@@ -28,7 +31,7 @@ Control Plane is the operations room for a hosted Ferrum service. It tracks the 
 - 🛰️ **Apart from what it runs.** It runs in a workspace of its own, away from the cells that hold customers' workspaces. It keeps where each workspace runs and on what terms, and never a workspace's records. If it is down, the cells and their workspaces carry on.
 - 🔒 **Customers stay in control of access.** A workspace's health is read with a health-only support key that the customer's administrator gave. The customer sees each of those requests and can end the access whenever they choose.
 - 🧾 **One digest, one release.** A release is known by its `sha256:` digest, which never changes. A second Release Manager qualifies it before it can be rolled out.
-- 🪜 **Rollouts that stop themselves.** Waves wait for each cell's weekly maintenance window, soak while the cell stays healthy, and halt when a cell falls ill, misses its window or loses its release.
+- 🪜 **Rollouts that stop themselves.** Given a cell's reports, waves wait for each cell's weekly maintenance window, soak while the cell stays healthy, and halt when a cell falls ill, misses its window or loses its release. Nothing sends those reports yet (see the note above).
 - 📣 **Status customers can read.** A public status page shows each cell by region, open incidents and coming maintenance, and names no customer.
 - 🤝 **Partners are first-class.** Partners onboard customers from versioned setup templates, raise cases, and read monthly statements, with tiers that lapse when certification does.
 - 💸 **Hosting billed through ERP.** With ERP installed, each hosted workspace is invoiced once a month for its days, plus usage beyond its terms.
@@ -38,14 +41,14 @@ Control Plane is the operations room for a hosted Ferrum service. It tracks the 
 
 | | |
 |---|---|
-| 📦 Version | `0.5.11` |
+| 📦 Version | `0.6.1` |
 | 🧱 Kind | Own interface at `/control/`, plus two portal pages and a public status page |
 | 🗃️ What it adds | 16 entities in the `control` package; 2 more (Hosting Billing, Hosting Invoice) in the ERP connector `control_erp` |
 | 👥 Roles | 2: Fleet Operator, Release Manager (the connector extends Fleet Operator) |
 | 📊 Reports | none of its own yet; the home page and status page carry the figures |
 | 🖨️ Print formats | none of its own |
 | ⏱️ Upkeep | one job: lapsed certifications, cell health, rollouts, workspace health, and monthly invoicing |
-| 🔗 Depends on | Ferrum `>=0.3.2, <0.4`; the connector needs the `control` app `>=0.4` and ERP `>=0.1` |
+| 🔗 Depends on | Ferrum `>=0.3.8, <0.4`; the connector needs the `control` app `>=0.4` and ERP `>=0.1` |
 | 🤝 Works with | ERP (hosting invoices), IoT Edge (gateway health in a workspace's health) |
 | 🌍 Languages | English, Arabic and Hindi (translated by a model, to be reviewed by native speakers) |
 | 🧪 Tests | 10 Rust tests (two are long end-to-end walks), 2 UI test files |
@@ -62,8 +65,8 @@ The fleet home, rollout waves, incident updates and the public status page are n
 ### 🛰️ Cells and their health
 
 - **Cell.** A deployment of Ferrum in one region. It holds its name, region, kind (Shared or Dedicated), capacity, how many workspaces are placed, its API address, the release and configuration fingerprint it should run, and a weekly maintenance window (day, start hour, length in hours).
-- **Readings from its own tooling.** A cell's tooling posts version, digest, configuration fingerprint, last backup, certificate expiry, and processor, memory and disk use. The cell's token is set on its record and kept sealed in the platform's vault, where only the Control Plane reads it. A cell reports at most twice a minute.
-- **Down.** A cell is down when it has not reported for 15 minutes or its certificate has expired.
+- **Readings from its own tooling.** A cell's tooling is meant to post version, digest, configuration fingerprint, last backup, certificate expiry, and processor, memory and disk use. The cell's token is set on its record and kept sealed in the platform's vault, where only the Control Plane reads it. A cell may report at most twice a minute. No such tooling is in the Ferrum repositories.
+- **Down.** A cell is down when it has not reported for 15 minutes or its certificate has expired. One that has never reported is Unknown.
 - **Degraded.** A cell is degraded when it runs another release than it should, its configuration has drifted, its last backup is more than 26 hours old, its certificate ends within 14 days, or a resource is at 90%.
 - **Fleet home.** Cells grouped by region with a placed-of-capacity bar, plus queues for open incidents, workspaces that are not healthy, and rollouts that are running or halted. The page refreshes the cell list every minute.
 - **Quick create.** New cell, new rollout and new incident are one click from the home page and the Ferrum create menu.
@@ -73,14 +76,14 @@ The fleet home, rollout waves, incident updates and the public status page are n
 - **Hosted Workspace.** A customer's workspace: slug, customer, address, region, cell, status (Onboarding, Active, Closed), plan, monthly amount, term end, support plan (Standard or Premium), partner, contact and administrator emails, the setup template and revision it came from, and when it was made on its cell.
 - **Placement by room.** A workspace left without a cell goes to its region's shared cell with the most room. A full cell, a down one and a dedicated one take none. A closed workspace leaves its room.
 - **Made on its cell.** A fleet operator uses **Make It on Its Cell**, or a partner onboarding a customer with a first administrator gets it made at once, or is told why the cell could not. It calls the cell's `POST /api/tenants` with the cell's bootstrap token, the setup's packages and settings, and the first administrator, who chooses their own password (the one it is made with is random and kept nowhere). It is made once.
-- **Health read from the workspace.** Upkeep reads each open workspace's `/api/support/report` with the health-only key its administrator gave: undelivered events, failed jobs, long queues, and what each installed app says of its own part. IoT Edge's quiet or troubled gateways are counted this way. Health is Unknown, Healthy, Degraded or Unreachable, with the problems in words.
+- **Health read from the workspace.** Upkeep reads each open workspace's `/api/support/report` with the health-only key its administrator gave: undelivered events, failed jobs, long queues, and what each installed app says of its own part. IoT Edge's quiet or troubled gateways are counted this way. Health is Unknown, Healthy, Degraded or Unreachable, with the problems in words. A report the platform's support report does not fill (no events, jobs, `usage` or `apps`) leaves the workspace Unreachable, "its report could not be read".
 - **Support access the customer controls.** The customer sees each request and ends the access when they choose. When the key is not given or has ended, the page says so plainly.
-- **Workspace Usage.** Each health reading keeps the day's active people and the storage its files take (the day's last reading is kept). A server that does not report usage yet says nothing of it.
+- **Workspace Usage.** Each health reading keeps the day's active people and the storage its files take (the day's last reading is kept).
 
 ### 🚢 Releases and staged rollouts
 
 - **Release.** Recorded by its `sha256:` digest, with version, provenance and notes. It starts as Candidate. A Release Manager other than who recorded it qualifies it, or it is Withdrawn. Only a qualified release is rolled out.
-- **Rollout.** A qualified release taken to a list of cells, one wave at a time, with a soak time in hours. Status is Draft, Running, Halted or Done; actions are Start, Halt and Resume.
+- **Rollout.** A qualified release taken to a list of cells, one wave at a time, with a soak time in hours. Status is Draft, Running, Halted or Done; actions are Start, Halt and Resume. A wave sets its cell's desired release and then waits for that cell's report: nothing here upgrades the cell.
 - **Waves.** Each wave is Pending, Upgrading, Soaking, Done or Failed. A wave starts when its cell's maintenance window opens and soaks once the cell runs the release and is healthy. It is done when the soak has passed.
 - **One at a time.** A cell is in one running rollout at a time.
 - **Halts by itself.** The rollout halts when a cell falls ill while soaking, when one is not upgraded within its window, or when its release is withdrawn, and says why.
@@ -150,7 +153,7 @@ flowchart LR
     CP -- "contacts told" --> CUST["Customers"]
 ```
 
-A cell's own tooling does the upgrade. The control plane decides which cell goes next, when, and whether to stop, from what the cells report.
+The control plane decides which cell goes next, when, and whether to stop, from what the cells report. It does not upgrade a cell, and no sender of a cell's report is in the Ferrum repositories yet.
 
 ### Partners, workspaces and invoices
 
@@ -186,6 +189,7 @@ The workspace record holds where it runs and on what terms. The workspace's own 
 | Setup Template | A versioned setup | packages, apps, settings, revision |
 | Support Case | A request for help | Low / High / Critical, Open / Waiting / Resolved, due at |
 | Revenue Statement | A partner's month | lines, total, partner share |
+| Small tables (child) | Partner members, the cells an incident touches, a statement's lines | |
 | Hosting Billing (connector) | Which company and item invoice hosting | company, item |
 | Hosting Invoice (connector) | One workspace-month invoiced | days, amount, peak people, peak storage, sales invoice |
 
@@ -199,7 +203,7 @@ One job runs for the workspace holding the control plane: it lapses certificatio
 |---|---|---|
 | ERP | The connector `control-erp` creates Sales Invoices for hosted workspaces | ERP `>=0.1` installed, a company and an item in Hosting Billing |
 | IoT Edge | Its gateways count in a workspace's health through the support report | The workspace's server reporting `apps` in its support report |
-| Cells' tooling | Posts readings to `POST /api/site/{workspace}/control/report` | A cell name and its token |
+| Cells' tooling | Posts readings to `POST /api/site/{workspace}/control/report` | A cell name and its token, and tooling that sends them: none is in the Ferrum repositories |
 | Workspaces | Health from `/api/support/report` | A health-only support key from the customer |
 | Cells' provisioning | `POST /api/tenants` on a cell | The cell's bootstrap token |
 | Email | Workspaces' contacts get a planned-maintenance mail when a rollout starts | The platform's mailer |
@@ -220,15 +224,15 @@ The closest products are fleet and hosting managers: Rancher and Portainer manag
 
 | Capability | Ferrum Control Plane | Rancher | Portainer | Plesk | WHMCS |
 |---|:-:|:-:|:-:|:-:|:-:|
-| Inventory of deployments with health | ✅ | ✅ | ✅ | 🟡 | ❌ |
-| Down and drift detection from reports | ✅ | 🟡 | 🟡 | ❌ | ❌ |
+| Inventory of deployments with health | 🟡 ¹ | ✅ | ✅ | 🟡 | ❌ |
+| Down and drift detection from reports | 🟡 ¹ | 🟡 | 🟡 | ❌ | ❌ |
 | Placement by capacity and region | ✅ | ➖ | ➖ | ❌ | ❌ |
 | Provisioning new infrastructure | ❌ | ✅ | 🟡 | ❌ | 🟡 |
 | Releases known by immutable digest | ✅ | ❌ | ❌ | ❌ | ❌ |
 | Qualification by a second person | ✅ | ❌ | ❌ | ❌ | ❌ |
-| Staged rollouts in waves | ✅ | 🟡 | ❌ | ❌ | ❌ |
+| Staged rollouts in waves | 🟡 ¹ | 🟡 | ❌ | ❌ | ❌ |
 | Maintenance windows per deployment | ✅ | ❌ | ❌ | ❌ | ❌ |
-| Soak and automatic halt | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Soak and automatic halt | 🟡 ¹ | ❌ | ❌ | ❌ | ❌ |
 | Role-based access | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Incidents with updates | ✅ | ❌ | ❌ | ❌ | 🟡 |
 | Public status page | ✅ | ❌ | ❌ | ❌ | 🟡 |
@@ -247,18 +251,18 @@ The closest products are fleet and hosting managers: Rancher and Portainer manag
 | Open source and self-hosted | ✅ | ✅ | ✅ | ❌ | ❌ |
 | Same data as accounting and the rest of the business | ✅ | ❌ | ❌ | ❌ | ❌ |
 
-Notes: Rancher's rollouts are GitOps targeting through Fleet, not release waves with windows. Plesk and WHMCS rows marked 🟡 for incidents, status and partners reflect network-issue notices, reseller features and affiliate tools that are narrower than a cell-level status and partner portfolio. Setup templates in the leaders are provisioning blueprints or cluster templates, and are not versioned per workspace.
+Notes: ¹ For Ferrum, the logic is built and tested against posted reports, but nothing sends a cell's report and nothing upgrades a cell. Rancher's rollouts are GitOps targeting through Fleet, not release waves with windows. Plesk and WHMCS rows marked 🟡 for incidents, status and partners reflect network-issue notices, reseller features and affiliate tools that are narrower than a cell-level status and partner portfolio. Setup templates in the leaders are provisioning blueprints or cluster templates, and are not versioned per workspace.
 
 ### 🏆 Where Control Plane stands out
 
-- 🧾 **Release discipline.** Immutable digests, a second person to qualify, waves in each cell's window, and automatic halt.
+- 🧾 **Release discipline.** Immutable digests, a second person to qualify, and, on a cell's reports, waves in its window and automatic halt.
 - 🛰️ **It is not in the blast radius.** It runs apart from the cells and keeps no customer records.
 - 🤝 **Operators, partners and customers in one place.** Fleet, status, cases, statements and invoices share one data set.
 - 🔐 **Customer-controlled access.** Health is read with a key the customer gives and can end.
 
 ### 🚧 Where the leaders are still ahead
 
-- 🏗️ **Provisioning.** Rancher creates clusters. Cells here are made by their operators' tooling and report in.
+- 🏗️ **Provisioning.** Rancher creates clusters. Cells here are made by their operators' tooling, which is not part of this.
 - 💾 **Backups and restores.** Plesk runs them. A recovery request here records the decision, not the restore.
 - 💳 **Payment.** WHMCS has payment gateways. Here, invoices are paid as ERP takes payments.
 - 🧰 **Breadth.** The leaders manage workloads, sites, domains and mail; this manages one product's fleet.
@@ -282,7 +286,8 @@ Notes: Rancher's rollouts are GitOps targeting through Fleet, not release waves 
 
 ### 🔜 Next up
 
-- [ ] **Provision a cell from here.** Cells are made by their operators' tooling today and report in.
+- [ ] **A sender of a cell's report, and something that upgrades a cell.** Neither is in the Ferrum repositories, so rollouts cannot run against a real cell.
+- [ ] **Provision a cell from here.** Cells are made by their operators' tooling today.
 - [ ] **Install a setup's store apps when the workspace is made.** Today its administrator installs them from the App Manager.
 - [ ] **Run backups and restores.** Today they belong to the cells' tooling, and a recovery request records the decision.
 - [ ] **Price lists and payment gateways.** Invoices go out in the invoicing company's currency; payment gateways wait for their keys.
