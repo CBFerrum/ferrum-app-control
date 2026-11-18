@@ -93,7 +93,7 @@ impl T {
         self.get("Cell", uid(&rows[0]["id"])).await
     }
     async fn upkeep(&self, at: DateTime<Utc>) {
-        ferrum_app_control::maintenance_at(&self.k, at).await.expect("upkeep");
+        ferrum_app_control::maintenance_at(&self.k, self.tenant, at).await.expect("upkeep");
     }
     /// A cell's readings, sent now and dated `at` as if they had come then.
     async fn reading(&self, cell: &str, token: &str, version: &str, digest: &str, at: DateTime<Utc>, disk: i64) {

@@ -66,7 +66,7 @@ impl T {
         out
     }
     async fn upkeep(&self, now: &str) {
-        ferrum_app_control::maintenance_at(&self.k, at(now)).await.expect("upkeep");
+        ferrum_app_control::maintenance_at(&self.k, self.tenant, at(now)).await.expect("upkeep");
     }
 }
 
@@ -114,7 +114,6 @@ async fn scenario() {
     hooks.own("control", &own);
     let k = Kernel::boot(db, catalog, hooks, KernelSettings::default(), None).await.expect("boot");
     ferrum_domain::maintenance(&k).await.expect("partitions");
-    ferrum_app_erp::maintenance(&k).await.expect("partitions");
     // A day of its own, never UTC's: behind it early in UTC's day, ahead of it later.
     let zone = if Utc::now().hour() < 11 { "Etc/GMT+12" } else { "Etc/GMT-14" };
     let tenant = k
