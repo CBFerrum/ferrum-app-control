@@ -26,7 +26,7 @@ mod site;
 
 use chrono::{DateTime, Utc};
 use ferrum_domain::reports::ReportSource;
-use ferrum_kernel::{Ctx, Doc, Error, HookRegistry, Kernel, Result};
+use ferrum_kernel::{Ctx, Doc, HookRegistry, Kernel, Result};
 use serde_json::Value;
 use std::sync::Arc;
 use uuid::Uuid;
@@ -75,46 +75,30 @@ pub fn reports() -> Vec<Arc<dyn ReportSource>> {
     vec![]
 }
 
-/// Upkeep: certifications that lapsed, cells' health, rollouts moved on, workspaces' health read
-/// from their cells, and, with ERP, the months ended invoiced.
-pub async fn maintenance(k: &Kernel) -> Result<()> {
-    maintenance_at(k, Utc::now()).await
+/// Upkeep of one workspace: certifications that lapsed, cells' health, rollouts moved on, the workspace's health read
+/// from its cells, and, with ERP, the months ended invoiced.
+pub async fn maintenance(k: &Kernel, tenant: Uuid) -> Result<()> {
+    maintenance_at(k, tenant, Utc::now()).await
 }
 
 /// [`maintenance`] as of `now`.
-pub async fn maintenance_at(k: &Kernel, now: DateTime<Utc>) -> Result<()> {
-    let mut tx = k.db.system_tx().await?;
-    let tenants: Vec<Uuid> = sqlx::query_scalar("select id from tenant where status = 'active' order by id").fetch_all(&mut *tx).await?;
+pub async fn maintenance_at(k: &Kernel, tenant: Uuid, now: DateTime<Utc>) -> Result<()> {
+    let ctx = Ctx::system(tenant, k.registry.schema(tenant).await?);
+    // `now`'s day where the control plane is (at its zone's offset today).
+    let today = now.with_timezone(ctx.now_local().offset()).date_naive();
+    let mut tx = k.db.tenant_tx(tenant).await?;
+    partners::lapse(k, &ctx, &mut tx, today).await?;
+    fleet::refresh_cells(k, &ctx, &mut tx, now).await?;
+    fleet::advance(k, &ctx, &mut tx, now).await?;
     tx.commit().await?;
-    let mut first_error: Option<Error> = None;
-    for tenant in tenants {
-        let run = async {
-            let schema = k.registry.schema(tenant).await?;
-            if !schema.packages.iter().any(|p| p == "control") {
-                return Ok(());
-            }
-            let ctx = Ctx::system(tenant, schema);
-            // `now`'s day where the control plane is (at its zone's offset today).
-            let today = now.with_timezone(ctx.now_local().offset()).date_naive();
-            let mut tx = k.db.tenant_tx(tenant).await?;
-            partners::lapse(k, &ctx, &mut tx, today).await?;
-            fleet::refresh_cells(k, &ctx, &mut tx, now).await?;
-            fleet::advance(k, &ctx, &mut tx, now).await?;
-            tx.commit().await?;
-            // Each workspace's cell is asked with no transaction open.
-            hosting::read_health(k, &ctx, now).await?;
-            if ctx.schema.packages.iter().any(|p| p == CONNECTOR_PACKAGE) {
-                let mut tx = k.db.tenant_tx(tenant).await?;
-                billing::invoice(k, &ctx, &mut tx, today).await?;
-                tx.commit().await?;
-            }
-            Ok::<(), Error>(())
-        };
-        if let Err(e) = run.await {
-            first_error.get_or_insert(e);
-        }
+    // Each workspace's cell is asked with no transaction open.
+    hosting::read_health(k, &ctx, now).await?;
+    if ctx.schema.packages.iter().any(|p| p == CONNECTOR_PACKAGE) {
+        let mut tx = k.db.tenant_tx(tenant).await?;
+        billing::invoice(k, &ctx, &mut tx, today).await?;
+        tx.commit().await?;
     }
-    first_error.map_or(Ok(()), Err)
+    Ok(())
 }
 
 /// A document from JSON.

@@ -1,6 +1,6 @@
 id: control
 name: Control Plane
-version: 0.6.1
+version: 0.7.0
 publisher: cbferrum
 summary: "Ferrum Cloud's control plane: cells and their health, releases by digest, staged rollouts, incidents and status, recovery requests, and partners' portfolios"
 description: README.md
@@ -9,7 +9,7 @@ license: AGPL-3.0-only
 homepage: https://github.com/CBFerrum/ferrum-app-control
 support: https://github.com/CBFerrum/ferrum-app-control/issues
 runtime: native
-platform: ">=0.3.8, <0.4"
+platform: ">=0.4.0, <0.5"
 packages: [control]
 uninstall: ask
 # Its own interface at /control/: the cells, rollouts, incidents and workspaces; two pages of the

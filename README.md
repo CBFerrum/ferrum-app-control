@@ -7,7 +7,7 @@
 
 <br>
 
-[![Version](https://img.shields.io/badge/version-0.6.1-334155?style=flat-square)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.7.0-334155?style=flat-square)](CHANGELOG.md)
 [![Licence: AGPL-3.0](https://img.shields.io/badge/licence-AGPL--3.0-blue?style=flat-square)](LICENSE)
 [![Ferrum platform](https://img.shields.io/badge/runs%20on-Ferrum-2f5bea?style=flat-square)](https://github.com/CBFerrum/Ferrum)
 ![Rust](https://img.shields.io/badge/Rust-server-b7410e?style=flat-square&logo=rust)
@@ -41,14 +41,14 @@ Control Plane is the operations room for a hosted Ferrum service. It tracks the 
 
 | | |
 |---|---|
-| 📦 Version | `0.6.1` |
+| 📦 Version | `0.7.0` |
 | 🧱 Kind | Own interface at `/control/`, plus two portal pages and a public status page |
 | 🗃️ What it adds | 16 entities in the `control` package; 2 more (Hosting Billing, Hosting Invoice) in the ERP connector `control_erp` |
 | 👥 Roles | 2: Fleet Operator, Release Manager (the connector extends Fleet Operator) |
 | 📊 Reports | none of its own yet; the home page and status page carry the figures |
 | 🖨️ Print formats | none of its own |
 | ⏱️ Upkeep | one job: lapsed certifications, cell health, rollouts, workspace health, and monthly invoicing |
-| 🔗 Depends on | Ferrum `>=0.3.8, <0.4`; the connector needs the `control` app `>=0.4` and ERP `>=0.1` |
+| 🔗 Depends on | Ferrum `>=0.4.0, <0.5`; the connector needs the `control` app `>=0.4` and ERP `>=0.1` |
 | 🤝 Works with | ERP (hosting invoices), IoT Edge (gateway health in a workspace's health) |
 | 🌍 Languages | English, Arabic and Hindi (translated by a model, to be reviewed by native speakers) |
 | 🧪 Tests | 10 Rust tests (two are long end-to-end walks), 2 UI test files |
@@ -274,6 +274,7 @@ Notes: ¹ For Ferrum, the logic is built and tested against posted reports, but 
 
 ### ✅ Recently shipped
 
+- [x] **0.7.0**: Upkeep runs one workspace at a time, on whichever replica is free.
 - [x] **0.6.1** Rebuilt on Ferrum-Frontend 06bd1a2: its pages start through `mountApp`; no routes to the screens apps no longer have.
 - [x] **0.5.11** The interface rebuilt on the tuned design system: better menu icons, a lighter first page, a visible scroll cue, cleaner print.
 - [x] **0.5.10** The redesigned interface: upgraded design system, shaped loading, told-apart states, a work home with queues.
